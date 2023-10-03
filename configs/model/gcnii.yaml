@@ -1,0 +1,27 @@
+# @package _global_
+
+model:
+  name: GCNII
+  init_args:
+    _target_: gnn.gcnii.GCNII
+    feat_dim: ${data.feat_dim}
+    n_classes: ${data.n_labels}
+    n_layers: ${n_layers}
+    dropout: ${dropout}
+    alpha: ${alpha}
+# Model parameters
+alpha: 0.1
+n_layers: 2
+norm: BN
+dropout: 0.6
+epochs: 200
+eval_freq: 1
+n_hidden: 128
+lr: 0.005
+
+# Training settings
+save_hidden: false
+alias: ${data.name}/${n_layers}layer${model.name}_lr${lr}_h${n_hidden}_do${dropout}
+emb_file: emb/${alias}_emb.pth
+eval_metric: val_acc
+wandb_proj: MPLM-GNN

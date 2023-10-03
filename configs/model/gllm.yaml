@@ -1,0 +1,229 @@
+# @package _global_
+defaults:
+  - /prompt/graph_tree_meta_data
+model:
+  name: GraphLLM
+
+# @ GraphText Settings
+#in_fields: choice.a1y_t.a2y_t.a0x_t.a1x_t.a2x_t
+in_fields: a3y
+#in_fields: a0x_t
+# in_fields: x.text.a3y
+#graph_construct: spd0.spd1.spd2.a0x_sim.a1x_sim.a2x_sim
+graph_construct: spd0.spd1
+#graph_construct: spd1.spd2
+subgraph_size: 5
+  #  title: 1stHopOnly
+nb_padding: false
+nb_order: true
+node_dropout: 0.5
+
+tree_hierarchy: attr_type.graph_type # Best config
+
+#in_fields: a2y_choice # predicted label
+#in_fields: ay_choice.a2y_choice
+
+#.a3y_choice # predicted label
+out_field: choice
+
+#tree_hierarchy: attr_type.spd
+#tree_hierarchy: text.graph
+
+#graph_construct: Seq
+# @ Graph Information
+
+sim:
+  topk: 20
+  cache_template: ${env.path.temp_data_dir}${data.name}/{pg_name}Top${.topk}.sim_proxy_graph
+spd:
+  max_hops: ${oc.select:data.max_spd,3}
+  cache_file: ${env.path.temp_data_dir}${data.name}/Top${.max_hops}.spd_matrix
+
+ppr:
+  # Value Encoding: None stands for no value encoding; Rank group stands for value grouping
+  #  value_encoding: None
+  #  value_encoding: Rank_10 # Rank to 10 levels
+  #  sort_mat_construct_order: [ [ 0, 1, 2 ],[ 1, 0, 2 ], [ 2, 1, 0 ] ]
+  max_hops: 2
+  default_alpha: 0.25
+  cache_template: ${env.path.temp_data_dir}${data.name}/Top{topk}_eps{eps}_{normalization}norm_alpha={alpha}.ppr_matrix
+  topk: 32 # Following PPRGo
+  eps: 1e-4 # Following PPRGo
+  normalization: sym # sym or row or col
+rank:
+  methods: [ ppr_0.25 ]
+  #  methods: [ ppr_0.5,  ppr_0.01 ]
+  top_k: 32 # Following PPRGo
+  hidden_dim: 128
+
+# @ Demo for In-Context-Learning
+use_demo: true
+demo:
+  #  select_method: first # Fixed seed examples for every sample
+  select_method: max_degree # Fixed seed examples for every sample
+  template: '{graph_tree_info}The answer is {label}.'
+  #  select: class-prototype # Select center of each class cluster
+  #  select: BM25 # Use BM25 for dynamic retrieval
+  #  select: BM25 # Randomly select seed examples
+  keep_label_description: False
+  n_separators: 2 # Number of separators between examples
+  n_samples: ${data.n_labels} # Number of demonstrations
+
+
+
+# @ Position Embedding
+#add_pos_emb_to_text: True
+add_pos_emb_to_text_emb: false
+add_pos_emb_to_graph_emb: true
+
+# @ Encoder
+encoder:
+  #  _target_: gllm.model.LinearSeqEncoder
+  dropout: 0.5
+  input_norm: true
+  output_norm: true
+  norm: LN
+  input_dropout: true
+  output_dropout: false
+  new_arg: true
+encoder_alias: ${encoder.dropout}do${encoder.dropout}
+agent_name: DeepSpeedAgent
+local_rank: 0
+save_path: ${out_dir}checkpoints/
+
+# @ Text Settings
+add_pre_instruction: true
+pre_instruction_template: short
+#remove_quotation: true
+remove_quotation: true
+
+# @ LLM
+# LoRA
+lora:
+  r: 16
+  alpha: ${.r}
+  dropout: 0.1
+  target_modules: [ q_proj, v_proj, k_proj, o_proj ]
+#  modules_to_save: [ embed_tokens, lm_head ]
+
+# @ EVALUATE
+use_fwd_eval: false
+metrics: [ 'acc' ]
+eval_embeds_path: null
+eval_sets: [ 'train', 'val' , 'test' ]
+#eval_sets: [ 'train']
+choice_readout_pos: 0
+min_eval_step: 100
+log_path: null
+exp_name: null
+##llm_ckpt_path: HuggingFaceM4/tiny-random-LlamaForCausalLM
+#_stage1_ckpt_lookup:
+#  llama2-7b-chat:
+#    cora: output/ownx1k99/GraphLLM/cej5i2kn-Cora-5h0.y_hat.x.Y.C-GCNd32-do0.5/checkpoints/final_model/
+#    citeseer: output/ownx1k99/GraphLLM/bey7zkov-Cite-5h0.y_hat.x.Y.C-GCNd32-do0.5/checkpoints/final_model/
+#    pubmed: null
+#  llama2-13b-chat:
+#    cora: output/vn06t3oj/GraphLLM/3ankag30-Cora-5h0.y_hat.x.Y.C-GCNd32-do0.5/checkpoints/final_model/
+#    citeseer: output/vn06t3oj/GraphLLM/qe9xgcz8-Cite-5h0.y_hat.x.Y.C-GCNd32-do0.5/checkpoints/final_model/
+#    pubmed: null
+#stage1_ckpt: ${oc.select:_stage1_ckpt_lookup.${llm.base_model}.${data.name},null}
+##use_stage1_ckpt: true
+#use_stage1_ckpt: false
+max_tgt_len: 2048 # the maximum sequence length to be generated
+max_gen_len: 5 # the maximum sequence length to be generated
+stage: 2
+eval_freq: 30
+save_freq: 30000
+max_epochs: 9999
+total_steps: 700 #Number of train steps
+#use_lora: true
+use_lora: false
+use_embeds: true
+frozen_encoder: false
+frozen_llm: true
+#frozen_encoder: true
+#conv_template: gllm_v1
+conv_template: no_conv
+save_file: ${out_dir}${alias}.csv
+root_dir: ${env.path.project}
+mode: train
+log_freq: 500
+ds_config_path: configs/dsconfig/openllama_peft_stage_${stage}.json
+use_flash_attn: false
+# @ Text2Text fields: Upper
+
+dropout: 0.5
+eval_choice_only: ${add_class_token}
+alias: ${llm.name}-${data.alias}-${graph_construct}-${in_fields}
+
+#
+add_class_token: true
+add_label_name_output: true
+add_field_token: true
+add_info_token: true
+add_pad_token: true
+#
+eval_metric: val_acc
+
+# ! Deepspeed related
+use_deepspeed: false # For debug only
+eq_batch_size: 4
+inf_batch_size: ${oc.select:model._meta_data.inf_bsz,12}
+max_bsz_per_gpu: ${oc.select:llm._meta_data.max_bsz_per_gpu,12}
+bsz_per_gpu: ${get_bsz_per_gpu:${eq_batch_size}, ${max_bsz_per_gpu}}
+grad_acc_steps: ${get_grad_acc_steps:${eq_batch_size}, ${max_bsz_per_gpu}}
+
+# ! Float
+use_fp16: true
+use_bf16: true
+optimizer_type: AdamW
+
+# ! Optimizer
+warmup_rate: 0.1
+lr: 5e-5
+
+ds: # Deepspeed config
+  train_batch_size: ${eq_batch_size}
+  train_micro_batch_size_per_gpu: ${bsz_per_gpu}
+  gradient_accumulation_steps: ${grad_acc_steps} # ! To be overwritten
+  steps_per_print: 2000
+  gradient_clipping: 1.0
+  zero_optimization:
+    stage: 2 # ??? # Original 2
+    offload_optimizer:
+      device: cpu
+    contiguous_gradients: true
+    allgather_bucket_size: 500000000
+    allgather_partitions: true
+
+  fp16:
+    enabled: ${use_fp16}
+    opt_level: O2
+    min_loss_scale: 1
+
+  bf16:
+    enable: ${use_bf16}
+
+  optimizer:
+    type: ${optimizer_type}
+    params:
+      lr: ${lr}
+      betas: [ 0.9, 0.95 ]
+      eps: 1e-8
+      weight_decay: 0.001
+
+  scheduler:
+    type: WarmupDecayLR
+    params:
+      warmup_min_lr: 0
+      warmup_max_lr: ${lr}
+      warmup_num_steps: ${round_mult:${total_steps}, ${warmup_rate}}
+      total_num_steps: ${total_steps}
+
+  activation_checkpointing:
+    partition_activations: true
+    cpu_checkpointing: true
+    contiguous_memory_optimization: false
+    number_checkpoints: null
+    synchronize_checkpoint_boundary: false
+    profile: false

@@ -1,0 +1,9 @@
+# @package _global_
+env:
+  vars: # @ To be initialized by os.env
+    wandb_proj: MPLM-Debug
+logging:
+  level: debug
+debug: true
+data:
+  max_eval_samples: 50

@@ -1,0 +1,25 @@
+# @package _global_
+
+model:
+  name: GAT
+  init_args:
+    _target_: gnn.gat.GAT
+    in_size: ${data.feat_dim}
+    out_size: ${data.n_labels}
+    hid_size: ${n_hidden}
+    dropout: ${dropout}
+# Model parameters
+norm: BN
+dropout: 0.6
+epochs: 200
+n_heads: [ 8, 1 ]
+eval_freq: 1
+n_hidden: 128
+lr: 0.005
+
+# Training settings
+save_hidden: false
+alias: ${data.name}/${model.name}_lr${lr}_h${n_hidden}
+emb_file: emb/${alias}_emb.pth
+eval_metric: val_acc
+wandb_proj: MPLM-GNN
