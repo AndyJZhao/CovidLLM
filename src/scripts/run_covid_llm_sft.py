@@ -21,7 +21,7 @@ logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 from covid_llm.agent import DeepSpeedAgent, Agent
-from covid_llm.graph_instruction_dataset import GraphInstructionDataset, load_graph_sft_dataset
+from covid_llm.graph_instruction_dataset import InstructionDataset, load_graph_sft_dataset
 from covid_llm.model import GraphLLM
 from utils.data.textual_graph import TextualGraph
 import torch as th
@@ -63,7 +63,7 @@ def train_gllm(cfg):
     print_important_cfg(cfg, logger.debug)
     # Initialize DataLoaders
     batch_size = cfg.world_size * cfg.ds['train_micro_batch_size_per_gpu']
-    full_dataset = GraphInstructionDataset(data, cfg, cfg.mode)
+    full_dataset = InstructionDataset(data, cfg, cfg.mode)
     # ! Full data for link prediction
     train_ids = data.split_ids['train'][:cfg.data.max_train_samples]
     train_data, train_iter, sampler = load_graph_sft_dataset(

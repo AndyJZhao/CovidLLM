@@ -22,7 +22,7 @@ from graph_text.icl import LLMForInContextLearning
 from utils.data.textual_graph import TextualGraph
 import torch as th
 from llm import CpuFakeDebugLLM
-from covid_llm.graph_instruction_dataset import GraphInstructionDataset
+from covid_llm.instruction_dataset import InstructionDataset
 from torch.utils.data import Subset
 
 
@@ -31,7 +31,7 @@ from torch.utils.data import Subset
 def run_graph_text_inference(cfg):
     cfg, logger = init_experiment(cfg)
     data = TextualGraph(cfg=cfg)
-    full_dataset = GraphInstructionDataset(data, cfg, cfg.mode)
+    full_dataset = InstructionDataset(data, cfg, cfg.mode)
     dataset = Subset(full_dataset, data.split_ids.test[:cfg.data.max_test_samples])
     if cfg.get("debug", False):
         llm = CpuFakeDebugLLM()  # Use local CPU for faster debugging
