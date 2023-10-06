@@ -53,11 +53,11 @@ def load_graph_sft_dataset(cfg, full_dataset, split, split_ids, batch_size, worl
     return dataset, iter_, sampler
 
 
-class GraphInstructionDataset(Dataset):
+class InstructionDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
     def __init__(self, data: TextualGraph, cfg, mode):
-        super(GraphInstructionDataset, self).__init__()
+        super(InstructionDataset, self).__init__()
         self.data = data
         self.cfg = cfg
         self.mode = mode
@@ -115,23 +115,6 @@ class GraphInstructionDataset(Dataset):
                 self.data.get_node_info(n, field=f) for n in subg_nodes
             )
 
-        # subg_info = defaultdict(dict)
-        # # Center node
-        # for f in self.data.in_text_fields:
-        #     subg_info['center node'][f] = self.data.get_node_info(node_id, field=f)
-        # # Neighborhood Subgraph Information
-        # for f in self.data.in_cont_fields:
-        #     # Add empty string to the continuous field, to be encoded in the model forward part
-        #     if self.cfg.graph_construct == 'ByOrder':
-        #         order_lookup = {1: 'first', 2: 'second', 3: 'third'}
-        #         subg_info['first order neighbor information'] = {f: ''}
-        #         subg_info['second order neighbor information'] = {f: ''}
-        #     else:
-        #         subg_info['neighbor graph information'][f] = ''
-        #         # update cont-field to enable unique seq name: seq_name
-        #         seq_names = [f'{f}-{_}' for _ in subg_nodes]
-        #         node_id_to_encode_id[f].extend(seq_names)
-        #         encode_seq[f].extend(self.data.get_node_info(n, field=f) for n in subg_nodes)
         return subg_info
 
     def collate(self, batch):
