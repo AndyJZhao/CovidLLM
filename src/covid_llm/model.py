@@ -308,7 +308,7 @@ class CovidLLM(nn.Module):
         with time_logger(f'initialization of LLM decoder from {cfg.llm.local_dir}'):
             self.llm = LlamaForCausalLM.from_pretrained(cfg.llm.local_dir)
         self.llm.config.use_cache = False
-        self.cls_token_names = class_tokens = [f'<c{l}>' for l in range(data.n_labels)]
+        self.cls_token_names = class_tokens = [r.label_token for i,r in data.label_info.iterrows()]
 
         special_tokens = []
         if cfg.get('add_class_token', True):

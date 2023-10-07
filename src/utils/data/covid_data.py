@@ -389,7 +389,7 @@ class CovidData:
         raw_data = uf.pickle_load(cfg.data.raw_data_file)
         self.state_df = state_df = raw_data.static
         self.df = df = raw_data.dynamic
-        self.splits = splits = raw_data.splits
+        self.split_ids = splits = raw_data.splits
         self.label_info = label_info = raw_data.label_info
         logger.info(f'Loaded meta information of {len(state_df)} states')
         logger.info(f'Loaded COVID data, {len(df)} weeks in total')

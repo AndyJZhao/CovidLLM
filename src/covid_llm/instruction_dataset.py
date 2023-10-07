@@ -61,7 +61,6 @@ class InstructionDataset(Dataset):
         self.data = data
         self.cfg = cfg
         self.mode = mode
-        self.g = data.g
 
     def __len__(self):  # number of instances
         return len(self.data)
