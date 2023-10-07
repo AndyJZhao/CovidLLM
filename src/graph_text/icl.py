@@ -1,11 +1,11 @@
 from omegaconf import DictConfig
 
 from llm.llm import LLM
-from utils.data.textual_graph import TextualGraph
+from utils.data.covid_data import CovidData
 
 
 class LLMForInContextLearning(object):
-    def __init__(self, cfg: DictConfig, data: TextualGraph, llm: LLM, _logger, max_new_tokens=20, gen_mode="text",
+    def __init__(self, cfg: DictConfig, data: CovidData, llm: LLM, _logger, max_new_tokens=20, gen_mode="text",
                  **kwargs, ):
         self.cfg = cfg
         self.gen_mode = gen_mode

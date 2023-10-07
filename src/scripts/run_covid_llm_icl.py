@@ -19,18 +19,17 @@ logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from graph_text.icl import LLMForInContextLearning
-from utils.data.textual_graph import TextualGraph
-import torch as th
+from utils.data.covid_data import CovidData
 from llm import CpuFakeDebugLLM
 from covid_llm.instruction_dataset import InstructionDataset
 from torch.utils.data import Subset
 
 
 @time_logger()
-@hydra.main(config_path=f"{root_path}/configs", config_name="main_cfg", version_base=None)
+@hydra.main(config_path=f"{root_path}/configs", config_name="main", version_base=None)
 def run_graph_text_inference(cfg):
     cfg, logger = init_experiment(cfg)
-    data = TextualGraph(cfg=cfg)
+    data = CovidData(cfg.data.file)
     full_dataset = InstructionDataset(data, cfg, cfg.mode)
     dataset = Subset(full_dataset, data.split_ids.test[:cfg.data.max_test_samples])
     if cfg.get("debug", False):

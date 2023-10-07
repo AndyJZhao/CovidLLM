@@ -3,9 +3,9 @@
 defaults:
   - proj/env
   - _self_ # To be overwritten by experimental settings
-  - data: citeseer
+  - data: covid
   - llm: llama_peft
-  - model: gllm
+  - model: covid_llm
   - optional template: ${model}/${data}
   - prompt: prompts
   - exp: icl

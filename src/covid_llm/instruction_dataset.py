@@ -20,7 +20,7 @@ import torch as th
 from torch.utils.data import Dataset, DataLoader, Subset
 from itertools import chain
 
-from utils.data.textual_graph import TextualGraph
+from utils.data.covid_data import CovidData
 from .samplers import DistributedBatchSampler
 
 
@@ -56,7 +56,7 @@ def load_graph_sft_dataset(cfg, full_dataset, split, split_ids, batch_size, worl
 class InstructionDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, data: TextualGraph, cfg, mode):
+    def __init__(self, data: CovidData, cfg, mode):
         super(InstructionDataset, self).__init__()
         self.data = data
         self.cfg = cfg

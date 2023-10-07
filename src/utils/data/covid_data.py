@@ -381,7 +381,7 @@ def generate_few_shot_split(n_labels, g, split_ids, n_demo_per_class):
     return new_split_ids
 
 
-class TextualGraph:
+class CovidData:
     @uf.time_logger("dataset initialization")
     def __init__(self, cfg: DictConfig):  # Process split settings, e.g. -1/2 means first split
         self.cfg = cfg

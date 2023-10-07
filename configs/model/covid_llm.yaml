@@ -116,19 +116,6 @@ choice_readout_pos: 0
 min_eval_step: 100
 log_path: null
 exp_name: null
-##llm_ckpt_path: HuggingFaceM4/tiny-random-LlamaForCausalLM
-#_stage1_ckpt_lookup:
-#  llama2-7b-chat:
-#    cora: output/ownx1k99/GraphLLM/cej5i2kn-Cora-5h0.y_hat.x.Y.C-GCNd32-do0.5/checkpoints/final_model/
-#    citeseer: output/ownx1k99/GraphLLM/bey7zkov-Cite-5h0.y_hat.x.Y.C-GCNd32-do0.5/checkpoints/final_model/
-#    pubmed: null
-#  llama2-13b-chat:
-#    cora: output/vn06t3oj/GraphLLM/3ankag30-Cora-5h0.y_hat.x.Y.C-GCNd32-do0.5/checkpoints/final_model/
-#    citeseer: output/vn06t3oj/GraphLLM/qe9xgcz8-Cite-5h0.y_hat.x.Y.C-GCNd32-do0.5/checkpoints/final_model/
-#    pubmed: null
-#stage1_ckpt: ${oc.select:_stage1_ckpt_lookup.${llm.base_model}.${data.name},null}
-##use_stage1_ckpt: true
-#use_stage1_ckpt: false
 max_tgt_len: 2048 # the maximum sequence length to be generated
 max_gen_len: 5 # the maximum sequence length to be generated
 stage: 2

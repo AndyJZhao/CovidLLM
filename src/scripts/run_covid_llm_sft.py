@@ -23,7 +23,7 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 from covid_llm.agent import DeepSpeedAgent, Agent
 from covid_llm.graph_instruction_dataset import InstructionDataset, load_graph_sft_dataset
 from covid_llm.model import GraphLLM
-from utils.data.textual_graph import TextualGraph
+from utils.data.covid_data import CovidData
 import torch as th
 
 
@@ -31,7 +31,7 @@ import torch as th
 @hydra.main(config_path=f'{root_path}/configs', config_name='main_cfg', version_base=None)
 def train_gllm(cfg):
     cfg, logger = init_experiment(cfg)
-    data = TextualGraph(cfg=cfg)
+    data = CovidData(cfg=cfg)
 
     cfg.hidden_dim = {f: data.g.ndata[f].shape[-1] for f in data.g.ndata.keys()}
     is_cpu_debug = not th.cuda.is_available()
