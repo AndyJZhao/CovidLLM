@@ -7,7 +7,7 @@ data:
   max_eval_samples: 999999
 use_demo: false
 out_field: c
-wandb_proj: GraphLLM-SFT
+wandb_proj: CovidLLM-SFT
 
 
 

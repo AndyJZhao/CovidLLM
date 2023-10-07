@@ -2,7 +2,7 @@
 defaults:
   - /prompt/graph_tree_meta_data
 model:
-  name: GraphLLM
+  name: CovidLLM
 
 # @ GraphText Settings
 #in_fields: choice.a1y_t.a2y_t.a0x_t.a1x_t.a2x_t
@@ -34,10 +34,10 @@ out_field: choice
 
 sim:
   topk: 20
-  cache_template: ${env.path.temp_data_dir}${data.name}/{pg_name}Top${.topk}.sim_proxy_graph
+  cache_template: ${path.data_cache}${data.name}/{pg_name}Top${.topk}.sim_proxy_graph
 spd:
   max_hops: ${oc.select:data.max_spd,3}
-  cache_file: ${env.path.temp_data_dir}${data.name}/Top${.max_hops}.spd_matrix
+  cache_file: ${path.data_cache}${data.name}/Top${.max_hops}.spd_matrix
 
 ppr:
   # Value Encoding: None stands for no value encoding; Rank group stands for value grouping
@@ -46,7 +46,7 @@ ppr:
   #  sort_mat_construct_order: [ [ 0, 1, 2 ],[ 1, 0, 2 ], [ 2, 1, 0 ] ]
   max_hops: 2
   default_alpha: 0.25
-  cache_template: ${env.path.temp_data_dir}${data.name}/Top{topk}_eps{eps}_{normalization}norm_alpha={alpha}.ppr_matrix
+  cache_template: ${path.data_cache}${data.name}/Top{topk}_eps{eps}_{normalization}norm_alpha={alpha}.ppr_matrix
   topk: 32 # Following PPRGo
   eps: 1e-4 # Following PPRGo
   normalization: sym # sym or row or col
@@ -132,7 +132,6 @@ frozen_llm: true
 #conv_template: gllm_v1
 conv_template: no_conv
 save_file: ${out_dir}${alias}.csv
-root_dir: ${env.path.project}
 mode: train
 log_freq: 500
 ds_config_path: configs/dsconfig/openllama_peft_stage_${stage}.json

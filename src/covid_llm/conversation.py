@@ -142,7 +142,7 @@ conv_bair_v1 = Conversation(
 )
 
 conv_gllm_v1 = Conversation(
-    system="You are GraphLLM, a large language model for graph machine learning. You are able to "
+    system="You are CovidLLM, a large language model for graph machine learning. You are able to "
            "understand the graph feature in both continuous and discrete form that the user provides, "
            "and assist the user with graph machine learning tasks. Follow the instructions carefully "
            "and answer the questions.",

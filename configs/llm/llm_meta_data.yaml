@@ -1,7 +1,4 @@
 _llm_md_lookup:
-  vicuna7b:
-    hf_name: lmsys/vicuna-7b-v1.3
-    local_dir: ${env.path.scratch}checkpoints/vicuna-7b/
   tinygpt:
     hf_name: HuggingFaceM4/tiny-random-LlamaForCausalLM
     max_bsz_per_gpu: 18

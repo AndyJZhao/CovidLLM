@@ -21,19 +21,18 @@ logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 from covid_llm.agent import DeepSpeedAgent, Agent
-from covid_llm.graph_instruction_dataset import InstructionDataset, load_graph_sft_dataset
-from covid_llm.model import GraphLLM
+from covid_llm.instruction_dataset import InstructionDataset, load_sft_dataset
+from covid_llm.model import CovidLLM
 from utils.data.covid_data import CovidData
 import torch as th
 
 
 @time_logger()
-@hydra.main(config_path=f'{root_path}/configs', config_name='main_cfg', version_base=None)
+@hydra.main(config_path=f'{root_path}/configs', config_name='main', version_base=None)
 def train_gllm(cfg):
     cfg, logger = init_experiment(cfg)
     data = CovidData(cfg=cfg)
 
-    cfg.hidden_dim = {f: data.g.ndata[f].shape[-1] for f in data.g.ndata.keys()}
     is_cpu_debug = not th.cuda.is_available()
     if is_cpu_debug:
         cfg.llm.base_model = 'tinygpt'
@@ -51,7 +50,7 @@ def train_gllm(cfg):
         logger.critical('FlashAttn2 disabled for training')
     logger.critical(f'eq_batch_size={cfg.eq_batch_size}, bsz_per_gpu={cfg.bsz_per_gpu}, '
                     f'grad_acc_steps={cfg.grad_acc_steps}')
-    model = GraphLLM(cfg, data, logger)
+    model = CovidLLM(cfg, data, logger)
     if cfg.use_deepspeed:
         logger.critical('Using DeepSpeed agent for training')
         agent = DeepSpeedAgent(model, cfg, data, logger)
@@ -66,14 +65,14 @@ def train_gllm(cfg):
     full_dataset = InstructionDataset(data, cfg, cfg.mode)
     # ! Full data for link prediction
     train_ids = data.split_ids['train'][:cfg.data.max_train_samples]
-    train_data, train_iter, sampler = load_graph_sft_dataset(
+    train_data, train_iter, sampler = load_sft_dataset(
         cfg,
         full_dataset=full_dataset, split_ids=train_ids,
         batch_size=batch_size,
         split='train', world_size=cfg.world_size, rank=cfg.local_rank
     )
 
-    eval_iter_dict = {split: load_graph_sft_dataset(
+    eval_iter_dict = {split: load_sft_dataset(
         cfg,
         full_dataset=full_dataset,
         batch_size=cfg.inf_batch_size,  # Full test evaluate

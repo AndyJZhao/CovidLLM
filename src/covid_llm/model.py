@@ -274,11 +274,11 @@ class MLPEncoder(nn.Module):
         return output
 
 
-class GraphLLM(nn.Module):
+class CovidLLM(nn.Module):
     '''LoRA for LLaMa model'''
 
     def __init__(self, cfg, data, logger):
-        super(GraphLLM, self).__init__()
+        super(CovidLLM, self).__init__()
         self.cfg = cfg
         self.data = data
         self.logger = logger

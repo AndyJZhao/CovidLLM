@@ -23,29 +23,17 @@ cur_path = os.path.abspath(os.path.dirname(__file__))
 root_path = cur_path.split('src')[0]
 
 
-def update_private_cfg(cfg):
-    if (private_cfg_file := cfg.env.get('private_cfg_file')) and os.path.exists(private_cfg_file):
-        cfg = OmegaConf.merge(cfg, private_cfg := OmegaConf.load(private_cfg_file))
-        # cfg._uninportant_cfg.fields += list(private_cfg.env.vars.keys())
-    return cfg
-
-
-def get_env_vars(cfg=None, env_cfg_file=f'{root_path}configs/proj/env.yaml'):
+def init_env_variables(cfg=None, env_cfg_file=f'{root_path}configs/user/env.yaml'):
     if cfg is None:
         cfg = OmegaConf.load(env_cfg_file)
-    cfg = update_private_cfg(cfg)
-    return cfg
-
-
-def init_env_variables(cfg=None):
-    cfg = get_env_vars(cfg)
-    for k, v in cfg.env.vars.items():
-        k = k.upper()
-        os.environ[k] = v
-    # ! Insert conda path to the first place
-    if (conda_path := os.environ.get('CONDA_EXE')) is not None:
-        conda_bin_dir = conda_path.rstrip('conda')
-        os.environ['PATH'] = f"{conda_bin_dir}:{os.environ['PATH']}"
+    if 'env' in cfg and 'vars' in cfg.env:
+        for k, v in cfg.env.vars.items():
+            k = k.upper()
+            os.environ[k] = v
+        # ! Insert conda path to the first place
+        if (conda_path := os.environ.get('CONDA_EXE')) is not None:
+            conda_bin_dir = conda_path.rstrip('conda')
+            os.environ['PATH'] = f"{conda_bin_dir}:{os.environ['PATH']}"
 
     return cfg
 

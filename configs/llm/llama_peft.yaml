@@ -5,7 +5,7 @@ defaults:
 # generation hyper-parameters
 llm:
   _meta_data: ${_llm_md_lookup.${.base_model}}
-  local_dir: ${env.path.hf_local}${.base_model}/
+  local_dir: ${path.hf_local}${.base_model}/
   name: LLaMA-PEFT
   base_model: llama2-7b-chat
   hf_name: ${._meta_data.hf_name}

@@ -24,7 +24,7 @@ from utils.data.covid_data import CovidData
 from .samplers import DistributedBatchSampler
 
 
-def load_graph_sft_dataset(cfg, full_dataset, split, split_ids, batch_size, world_size=1, rank=0):
+def load_sft_dataset(cfg, full_dataset, split, split_ids, batch_size, world_size=1, rank=0):
     dataset = Subset(full_dataset, split_ids)
     if split == "train":
         sampler = th.utils.data.RandomSampler(dataset)
