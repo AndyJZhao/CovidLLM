@@ -32,7 +32,7 @@ from utils.data.preprocess import load_ogb_graph_structure_only
 from utils.pkg.dict2xml import dict2xml
 from utils.pkg.distributed import master_process_only, process_on_master_and_sync_by_pickle
 from .graph_tree import GraphTree
-
+from utils.basics import logger
 import numpy as np
 from scipy.cluster.vq import kmeans, vq
 
@@ -188,7 +188,7 @@ def preprocess_ogb(ogb_name, process_mode, raw_data_path, raw_text_url, max_seq_
     # g = node_subgraph(g, g_info.IDs, relabel_nodes=False) # For subset
     g = to_bidirected(g, copy_ndata=True)
     text, all_label_info = uf.pickle_load(processed_text_file)
-    # self.text = full_data.iloc[g_info.IDs].reset_index(drop=True)
+    # self.df = full_data.iloc[g_info.IDs].reset_index(drop=True)
     if 'tape' in additional_text_data:
         tape_df = pd.read_csv(additional_text_data['tape'], index_col=0)
         tape_df.rename(columns={'text': 'tape'}, inplace=True)
@@ -261,7 +261,7 @@ def preprocess_dgl(data_cfg: DictConfig):
         all_label_info, label_subset=None
     )
     data = pd.merge(data, label_info, how="left", on="label_id")
-    data["text"] = data[data_cfg.text.mode]
+    data["text"] = data[data_cfg.df.mode]
     data["gold_choice"] = data.apply(
         lambda x: label_info.choice.get(x["label_id"], "Other Labels"), axis=1
     )
@@ -302,7 +302,7 @@ def preprocess_explore_llm_on_graph(data_cfg: DictConfig):
     data = pd.merge(data, label_info, how="left", on="label_id")
     data["text"] = dataset.raw_texts
     if (cutoff := data_cfg.get('text_cutoff')) is not None:
-        data["text"] = data.apply(lambda x: ' '.join(x.text.split(' ')[:cutoff]), axis=1)
+        data["text"] = data.apply(lambda x: ' '.join(x.df.split(' ')[:cutoff]), axis=1)
     data["gold_choice"] = data.apply(lambda x: label_info.choice.get(x["label_id"], "Other Labels"), axis=1)
     data["pred_choice"] = np.nan
 
@@ -386,44 +386,24 @@ class CovidData:
     def __init__(self, cfg: DictConfig):  # Process split settings, e.g. -1/2 means first split
         self.cfg = cfg
         # ! Initialize Data Related
-        if cfg.data.type == "ogb":
-            cfg.data.use_tape = 'tape' in cfg.get('in_fields', [])
-            self.g, self.g_info, text, all_label_info, label_subset = preprocess_ogb(**cfg.data)
-            label_info, choice_to_label_id, choice_to_label_name, raw_label_id_to_label_id = (
-                initialize_label_and_choices(
-                    all_label_info,
-                    label_subset))
-            text["label_id"] = text.apply(lambda x: raw_label_id_to_label_id.get(x["label_id"], "Other Labels"), axis=1)
-            text["gold_choice"] = text.apply(lambda x: label_info.choice.get(x["label_id"], "Other Labels"), axis=1)
-            text["pred_choice"] = np.nan
-            self.choice_to_label_id, self.choice_to_label_name = choice_to_label_id, choice_to_label_name
-        elif cfg.data.type == "dgl":
-            (self.g, self.g_info, text, label_info, label_lookup_funcs, _,) = preprocess_dgl(cfg.data)
-            self.choice_to_label_id, self.choice_to_label_name = label_lookup_funcs
-        else:  # In Exploring the Potential of Large Language Models (LLMs) in Learning on Graphs
-            self.g, self.g_info, text, label_info, self.choice_to_label_id, self.choice_to_label_name = (
-                preprocess_explore_llm_on_graph(
-                    cfg.data))
-        print({k: len(v) for k, v in self.g_info.splits.items()})
-        print(f'nodes: {self.g.num_nodes()}; Edges: {self.g.num_edges()}; Labels: {self.g.ndata["label"].max().item()+1}; Features: {self.g.ndata["feat"].shape[1]}')
+        raw_data = uf.pickle_load(cfg.data.raw_data_file)
+        self.state_df = state_df = raw_data.static
+        self.df = df = raw_data.dynamic
+        self.splits = splits = raw_data.splits
+        logger.info(f'Loaded meta information of {len(state_df)} states')
+        logger.info(f'Loaded COVID data, {len(df)} weeks in total')
 
-        self.g = dgl.add_self_loop(dgl.to_bidirected(self.g, copy_ndata=True))
-
-        # ! Process graph and label information
-        self.g.ndata["x"] = self.g.ndata.pop("feat")  # Feature
-        self.g.ndata["y"] = F.one_hot(self.g.ndata["label"])  # Numerical Label
+        # ! Splits
+        for split, split_id in splits.items():
+            split_df = df.iloc[split_id]
+            logger.info(f'{split.upper()} set ({len(split_df)}): from {split_df.Week_start.min()} to {split_df.Week_start.max()}')
 
         # ! Get train mask
-        if cfg.data.n_shots > 0:
-            self.g_info.splits = generate_few_shot_split(cfg.data.n_labels, self.g, self.g_info.splits,
-                                                         cfg.data.n_shots)
-            add_split_mask_to_graph(self.g, self.g_info.splits)
-        # Only train data is visible, others are masked.
-        self.g.ndata["y"][~self.g.ndata["train_mask"]] = 0
-        self.n_labels = cfg.data.n_labels
-        self.labels = self.g_info.labels
-        self.split_ids = self.g_info.splits
-        self.text, self.label_info = text, label_info
+        self.df, self.label_info = text, label_info
+        lname = lambda x: f"<c{(x.label_id)}>: '{x.label_name}'" if cfg.add_class_token else x.label_name
+        self.label_names = str(list([lname(r) for _, r in self.label_info.iterrows()]))
+        if self.cfg.remove_quotation:
+            self.label_names = self.label_names.replace('"', "").replace("'", "")
 
         # ! Initialize Prompt Related
         # Initialize classification prompt
@@ -442,10 +422,6 @@ class CovidData:
         # ! Build dataset default message
         self.temp_folder = f"{cfg.env.path.temp_data_dir}{cfg.data.name}/"
         if cfg.model.name == "GraphLLM":
-            lname = lambda x: f"<c{(x.label_id)}>: '{x.label_name}'" if cfg.add_class_token else x.label_name
-            self.label_names = str(list([lname(r) for _, r in self.label_info.iterrows()]))
-            if self.cfg.remove_quotation:
-                self.label_names = self.label_names.replace('"', "").replace("'", "")
             self.in_fields = cfg.in_fields.split(".")
             self.in_text_fields = [_ for _ in self.in_fields if _ not in CONTINUOUS_FIELDS]
             self.in_cont_fields = [_ for _ in self.in_fields if _ in CONTINUOUS_FIELDS]
@@ -534,17 +510,17 @@ class CovidData:
 
     def build_graph_text(self, g, text_construct_fields):
         for text_type in text_construct_fields:
-            if text_type in self.text.columns:
+            if text_type in self.df.columns:
                 continue
             if text_type.startswith('a'):  # Propagated feature
                 _ = text_type.split("_")[0]
                 n_prop_hops, feat = int(_[1]), _[2:]
                 if feat == 'y':
                     _cache_file = f'{self.temp_folder}{text_type}shot-{self.cfg.data.n_shots}.propagated_label'
-                    self.text[text_type] = self.get_propagated_label_choice(n_prop_hops, cache_file=_cache_file)
+                    self.df[text_type] = self.get_propagated_label_choice(n_prop_hops, cache_file=_cache_file)
                 else:
                     _cache_file = f'{self.temp_folder}{text_type}shot-{self.cfg.data.n_shots}.kmeans_feat'
-                    self.text[text_type] = self.get_propagated_kmeans_text(
+                    self.df[text_type] = self.get_propagated_kmeans_text(
                         feat, n_prop_hops=n_prop_hops, k=self.cfg.data.n_labels, cache_file=_cache_file)
 
     def spd(self, i, j):
@@ -584,7 +560,7 @@ class CovidData:
         return np.random.choice(negative_nodes)
 
     def get_pos_rank(self, node_id):
-        nodes = np.hstack(([node_id], self.text.iloc[node_id].nb_seq))
+        nodes = np.hstack(([node_id], self.df.iloc[node_id].nb_seq))
         pos_rank = {
             rank_method: rank_mat[node_id, nodes].toarray().reshape(-1)
             for rank_method, rank_mat in self.graph_ranks.items()
@@ -601,22 +577,22 @@ class CovidData:
                 return th.zeros_like(self.g.ndata[field][0])
         else:  # Text fields
             if field[0].islower():  # Center node text sequence
-                return self.text.iloc[i][field]
+                return self.df.iloc[i][field]
             else:  # Neighborhood text
                 nb_text_list = []
                 if is_label and self.cfg.get("mask_label", True):
-                    for nb in self.text.iloc[
+                    for nb in self.df.iloc[
                         i
                     ].nb_seq:  # Only train labels are selected
                         # False implementation: gold labels are added as neighborhood labels.
-                        # nb_text_list.append(self.text.iloc[i][field.lower()] if nb in self.split_ids.train else 'NA')
+                        # nb_text_list.append(self.df.iloc[i][field.lower()] if nb in self.split_ids.train else 'NA')
                         nb_text_list.append(
-                            self.text.iloc[nb][field.lower()]
+                            self.df.iloc[nb][field.lower()]
                             if nb in self.split_ids.train
                             else "NA"
                         )
                 else:  # Neighborhood text sequence
-                    nb_text_list = self.text.iloc[self.text.iloc[i].nb_seq][
+                    nb_text_list = self.df.iloc[self.df.iloc[i].nb_seq][
                         field.lower()
                     ].tolist()
                 return str(nb_text_list)
@@ -721,7 +697,7 @@ class CovidData:
                     node_info_list.append(_item)
 
         tree_df = pd.DataFrame.from_records(node_info_list)
-        label = self.text.iloc[center_node][self.cfg.out_field] if supervised else None
+        label = self.df.iloc[center_node][self.cfg.out_field] if supervised else None
         graph_tree = GraphTree(data=self, df=tree_df, center_node=center_node, subg_nodes=subg_nodes,
                                hierarchy=hierarchy, label=label, name_alias=self.cfg.tree_node_alias,
                                style=self.cfg.prompt.style)

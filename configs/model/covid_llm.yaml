@@ -8,7 +8,7 @@ model:
 #in_fields: choice.a1y_t.a2y_t.a0x_t.a1x_t.a2x_t
 in_fields: a3y
 #in_fields: a0x_t
-# in_fields: x.text.a3y
+# in_fields: x.df.a3y
 #graph_construct: spd0.spd1.spd2.a0x_sim.a1x_sim.a2x_sim
 graph_construct: spd0.spd1
 #graph_construct: spd1.spd2

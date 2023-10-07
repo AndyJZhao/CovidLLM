@@ -90,7 +90,7 @@ class InstructionDataset(Dataset):
         question = self.data.prompt.question(graph_info=query_tree.prompt)
         in_text = self.data.prompt.human(demo=demo, question=question)
         if self.mode == 'sft':
-            out_text = self.data.prompt.gpt(answer=self.data.text.iloc[node_id][self.cfg.out_field])
+            out_text = self.data.prompt.gpt(answer=self.data.df.iloc[node_id][self.cfg.out_field])
         else:
             out_text = None
 

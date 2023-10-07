@@ -10,19 +10,19 @@ class LLMForInContextLearning(object):
         self.cfg = cfg
         self.gen_mode = gen_mode
         self.data = data
-        self.text = data.text
+        self.df = data.df
         self.logger = _logger
         self.llm = llm
         self.max_new_tokens = max_new_tokens
         # ! Classification prompt
 
-        self.text["dialog"] = "NA"
-        self.text["demo"] = "NA"
-        self.text["question"] = "NA"
-        self.text["generated_text"] = "NA"
+        self.df["dialog"] = "NA"
+        self.df["demo"] = "NA"
+        self.df["question"] = "NA"
+        self.df["generated_text"] = "NA"
 
     def eval_and_save(self, step, node_id, final_eval=False):
-        res_df = self.text.dropna()
+        res_df = self.df.dropna()
         res_df["correctness"] = res_df.apply(lambda x: x["gold_choice"] in x["pred_choice"], axis=1)
         res_df.sort_values('correctness', inplace=True)
         res_df.to_csv(self.cfg.save_file)
@@ -41,7 +41,7 @@ class LLMForInContextLearning(object):
             result.update({f"PD/{choice}.{self.data.choice_to_label_name[choice]}": cnt / len(valid_df)
                            for choice, cnt in valid_df.pred_choice.value_counts().to_dict().items()})
         sample = {f"sample_{k}": v
-                  for k, v in self.data.text.iloc[node_id].to_dict().items()}
+                  for k, v in self.data.df.iloc[node_id].to_dict().items()}
         self.logger.info(sample)
         self.logger.wandb_metric_log({**result, "step": step})
 
@@ -71,8 +71,8 @@ class LLMForInContextLearning(object):
             except:
                 pred_choice = ""
 
-        self.text.loc[node_id, "dialog"] = prompt + generated
-        self.text.loc[node_id, "demo"] = demo
-        self.text.loc[node_id, "question"] = question
-        self.text.loc[node_id, "pred_choice"] = pred_choice
-        self.text.loc[node_id, "generated_text"] = generated
+        self.df.loc[node_id, "dialog"] = prompt + generated
+        self.df.loc[node_id, "demo"] = demo
+        self.df.loc[node_id, "question"] = question
+        self.df.loc[node_id, "pred_choice"] = pred_choice
+        self.df.loc[node_id, "generated_text"] = generated

@@ -29,7 +29,7 @@ from torch.utils.data import Subset
 @hydra.main(config_path=f"{root_path}/configs", config_name="main", version_base=None)
 def run_graph_text_inference(cfg):
     cfg, logger = init_experiment(cfg)
-    data = CovidData(cfg.data.file)
+    data = CovidData(cfg=cfg)
     full_dataset = InstructionDataset(data, cfg, cfg.mode)
     dataset = Subset(full_dataset, data.split_ids.test[:cfg.data.max_test_samples])
     if cfg.get("debug", False):

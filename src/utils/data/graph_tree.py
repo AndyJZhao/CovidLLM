@@ -10,7 +10,7 @@ import re
 class GraphTree:
     def __init__(self, data, df, center_node, subg_nodes, hierarchy, name_alias, style='xml', label=None):
         self.df = df
-        self.text = data.text
+        self.df = data.df
         self.style = style
         self.subg_nodes = subg_nodes
         self.center_node = center_node
@@ -58,7 +58,7 @@ class GraphTree:
                 if len(row.nodes) > 0:
                     current_dict[name_alias.get(field, field)] = cont_field_str_template.format(index=index)
             else:  # Text
-                content = [data.text.iloc[_][row.attr_type] for _ in row['nodes'] if _ != -1]
+                content = [data.df.iloc[_][row.attr_type] for _ in row['nodes'] if _ != -1]
                 if isinstance(content, list):
                     content = [_ for _ in content if _ != 'NA']
                 if len(content) > 0:
@@ -81,10 +81,10 @@ class GraphTree:
                     graph_str = graph_str.replace(cont_field_str_template.format(index=index), placeholder)
             assert len(extract_indices(graph_str)) == 0
         elif self.style == 'flatten' or self.style == 'xml_wo_text_wo_order':
-            graph_str = str([self.text[row.attr_type][row.nodes] for i, row in self.df.iterrows()])
+            graph_str = str([self.df[row.attr_type][row.nodes] for i, row in self.df.iterrows()])
             graph_str = dict2xml({'feature_list': graph_str}, wrap="information", indent="\t")
         elif self.style == 'random_flatten':
-            graph_list = [self.text[row.attr_type][row.nodes] for i, row in self.df.iterrows()]
+            graph_list = [self.df[row.attr_type][row.nodes] for i, row in self.df.iterrows()]
             import random
             random.shuffle(graph_list)
             graph_str = str(graph_list)
