@@ -309,15 +309,10 @@ class CovidLLM(nn.Module):
             self.llm = LlamaForCausalLM.from_pretrained(cfg.llm.local_dir)
         self.llm.config.use_cache = False
         self.cls_token_names = class_tokens = [f'<c{l}>' for l in range(data.n_labels)]
-        field_tokens = [f'<{f} emb>' for f in data.in_cont_fields]
-        fields_to_add = [pg for pg in cfg.graph_construct.split('.')] + data.in_cont_fields + data.in_text_fields
-        field_names = [cfg.tree_node_alias.get(f, f) for f in fields_to_add]
-        field_tokens += sum([[f'<{f}>', f'</{f}>'] for f in field_names], [])
+
         special_tokens = []
         if cfg.get('add_class_token', True):
             special_tokens += class_tokens
-        if cfg.get('add_field_token', True):
-            special_tokens += field_tokens
         if cfg.get('add_pad_token', True):
             special_tokens += ['<pad>']
         if cfg.get('add_info_token', True):
@@ -340,7 +335,7 @@ class CovidLLM(nn.Module):
         for id, _ in data.label_info.iterrows():
             data.label_info.loc[id]['label_name'] = self.tokenizer.decode(self.tokenizer(_.label_name).input_ids[1:])
 
-        self.lid_to_lname = bidict({_.label_id: _.label_name
+        self.lid_to_lname = bidict({_.label_token: _.label_name
                                     for id, _ in data.label_info.iterrows()})
         self.lname_to_lid = self.lid_to_lname.inverse
 
@@ -356,24 +351,6 @@ class CovidLLM(nn.Module):
             )
             self.llm = get_peft_model(self.llm, peft_config)
             self.llm.print_trainable_parameters()
-
-        # Graph Encoder
-
-        self.encoder = nn.ModuleDict()  # Token Encoder
-        for f in data.in_cont_fields:
-            self.encoder[f] = MLPEncoder(
-                in_dim=cfg.hidden_dim[f.lower()],
-                out_dim=self.llm.config.hidden_size,
-                **cfg.encoder,
-            )
-        if cfg.frozen_encoder:
-            for name, param in self.encoder.named_parameters():
-                param.requires_grad = False
-            logging.info('LLAMA proj is frozen.')
-        else:
-            for name, param in self.encoder.named_parameters():
-                param.requires_grad = True
-            logging.info('LLAMA proj is not frozen.')
         logger.info('LLAMA proj initialized.')
 
         if cfg.frozen_llm:
@@ -388,25 +365,6 @@ class CovidLLM(nn.Module):
             logging.info('The LLM LLAMA is frozen except input and output embeddings.')
         self.max_tgt_len = max_tgt_len
 
-    def build_continuous_fields(self, token_ids, cont_fields, graph_tree_list, node_id_to_encode_id):
-        # build up continuous field information, e.g. <x_emb>, <a2x_emb>
-        # Returns cont_fields: List of tuple of (field, text_position, encode_ids)
-        encode_df = pd.concat([tree.encode_df for tree in graph_tree_list]).reset_index()
-        field_tokens = self.tokenizer.convert_tokens_to_ids([f'<{f} emb>' for f in cont_fields])
-        cont_text_locations = th.where(th.isin(token_ids.cpu(), th.tensor(field_tokens)))[0].numpy()
-        cont_fields_positions = find_consecutive_subarrays(cont_text_locations.tolist())
-        assert len(encode_df) == len(cont_fields_positions), 'Error in processing continuous feature.'
-
-        cont_fields = []  # Field, text_pos, encdoe_ids
-        for i, text_position in enumerate(cont_fields_positions):
-            f = encode_df.iloc[i].attr_type
-            encode_nodes = encode_df.iloc[i].nodes
-            assert len(text_position) == len(encode_nodes), 'Error in processing continuous feature.'
-            encode_ids = [node_id_to_encode_id[f][n] for n in encode_nodes]
-            start, end = text_position[0], text_position[-1] + 1
-            cont_fields.append((f, range(start, end), encode_ids))
-
-        return cont_fields
 
     def prompt_wrap(self, graph_emb, node_ids, graph_tree_lol, input_tok_ids, node_id_to_encode_id):
         input_tok_ids = input_tok_ids.to(self.device)  # bsz x s2
@@ -418,20 +376,6 @@ class CovidLLM(nn.Module):
         else:
             inputs_embeds = self.llm.model.model.embed_tokens(
                 input_tok_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
-        if graph_emb is not None:
-            # Construct graph embeddings to override text embeddings
-            new_input_embeds = []
-            for node_id, graph_tree_list, cur_input_ids, _cur_input_embeds in zip(
-                    node_ids, graph_tree_lol, input_tok_ids, inputs_embeds):
-                cur_input_embeds = _cur_input_embeds.clone()  # Clone the old embedding
-                continuous_fields = self.build_continuous_fields(cur_input_ids, graph_emb.keys(), graph_tree_list,
-                                                                 node_id_to_encode_id)
-                for field, text_pos, encdoe_ids in continuous_fields:
-                    # lookup batch encoded node embeddings
-                    g_emb = graph_emb[field][encdoe_ids]
-                    cur_input_embeds[text_pos] = g_emb
-                new_input_embeds.append(cur_input_embeds)
-            inputs_embeds = th.stack(new_input_embeds, dim=0)
         return inputs_embeds
 
     def forward(self, inputs):

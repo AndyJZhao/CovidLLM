@@ -145,7 +145,6 @@ alias: ${llm.name}-${data.alias}-${graph_construct}-${in_fields}
 #
 add_class_token: true
 add_label_name_output: true
-add_field_token: true
 add_info_token: true
 add_pad_token: true
 #
