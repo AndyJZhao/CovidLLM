@@ -11,6 +11,6 @@ data:
   task_description: >-
     You are an expert in predicting epidemic trends. You are going to choose the correct answer from several choices of categories: ${data.label_description}
   label_description: '' # To be initialized afterward
-
+  label_text: name
   # * meta_info:
   n_labels: 5

@@ -390,18 +390,19 @@ class CovidData:
         self.state_df = state_df = raw_data.static
         self.df = df = raw_data.dynamic
         self.splits = splits = raw_data.splits
+        self.label_info = label_info = raw_data.label_info
         logger.info(f'Loaded meta information of {len(state_df)} states')
         logger.info(f'Loaded COVID data, {len(df)} weeks in total')
 
         # ! Splits
         for split, split_id in splits.items():
             split_df = df.iloc[split_id]
-            logger.info(f'{split.upper()} set ({len(split_df)}): from {split_df.Week_start.min()} to {split_df.Week_start.max()}')
+            logger.info(
+                f'{split.upper()} set ({len(split_df)}): from {split_df.Week_start.min()} to '
+                f'{split_df.Week_start.max()}')
 
-        # ! Get train mask
-        self.df, self.label_info = text, label_info
-        lname = lambda x: f"<c{(x.label_id)}>: '{x.label_name}'" if cfg.add_class_token else x.label_name
-        self.label_names = str(list([lname(r) for _, r in self.label_info.iterrows()]))
+        # ! Get label names
+        self.label_names = str(self.label_info.label_name.tolist())
         if self.cfg.remove_quotation:
             self.label_names = self.label_names.replace('"', "").replace("'", "")
 
@@ -410,35 +411,12 @@ class CovidData:
         assert (col := f"label_{cfg.data.label_text}") in self.label_info.columns, "Unknown classification prompt mode."
         # cfg.in_field_description = [cfg._ for _ in self.in_fields]
         cfg.in_field_description = ''
-        if cfg.mode == 'sft':  # Supervised instruction tuning, use special class tokens
-            cfg.data.label_description = "[" + ", ".join(
-                f'<c{i}>: {_[col]}' for i, _ in self.label_info.iterrows()) + "]"
-        else:  # In context learning, avoid special class tokens
-            cfg.data.label_description = "[" + ", ".join(
-                f'{_["choice"]}: {_[col]}' for i, _ in self.label_info.iterrows()) + "]"
+        cfg.data.label_description = "[" + ", ".join(
+            f'{_.label_token}: {_[col]}' for i, _ in self.label_info.iterrows()) + "]"
+
         self.prompt = hydra.utils.instantiate(cfg.prompt)
         uf.logger.info(self.prompt.human)
 
-        # ! Build dataset default message
-        self.temp_folder = f"{cfg.env.path.temp_data_dir}{cfg.data.name}/"
-        if cfg.model.name == "GraphLLM":
-            self.in_fields = cfg.in_fields.split(".")
-            self.in_text_fields = [_ for _ in self.in_fields if _ not in CONTINUOUS_FIELDS]
-            self.in_cont_fields = [_ for _ in self.in_fields if _ in CONTINUOUS_FIELDS]
-
-            if cfg.add_class_token and self.cfg.mode == 'sft':
-                if cfg.add_label_name_output:
-                    text['c'] = text.apply(lambda x: f"<c{(x.label_id)}>: {x.label_name}", axis=1)
-                else:
-                    text['c'] = text.apply(lambda x: f"<c{(x.label_id)}>", axis=1)
-            else:
-                text['c'] = text.apply(lambda x: f"{x.label_name}", axis=1)
-
-            self.proxy_graphs = {}
-            text_construct_fields = [f for f in cfg.in_fields.split('.') if f.endswith('_t')]
-            self.build_proxy_graphs(self.g, cfg.graph_construct)
-            self.build_continuous_field(self.in_cont_fields)
-            self.build_graph_text(self.g, text_construct_fields)
         return
 
     def build_continuous_field(self, in_cont_fields):
