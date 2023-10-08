@@ -5,11 +5,6 @@ model:
   name: CovidLLM
 
 # @ GraphText Settings
-#in_fields: choice.a1y_t.a2y_t.a0x_t.a1x_t.a2x_t
-in_fields: a3y
-#in_fields: a0x_t
-# in_fields: x.df.a3y
-#graph_construct: spd0.spd1.spd2.a0x_sim.a1x_sim.a2x_sim
 graph_construct: spd0.spd1
 #graph_construct: spd1.spd2
 subgraph_size: 5
@@ -19,12 +14,7 @@ nb_order: true
 node_dropout: 0.5
 
 tree_hierarchy: attr_type.graph_type # Best config
-
-#in_fields: a2y_choice # predicted label
-#in_fields: ay_choice.a2y_choice
-
-#.a3y_choice # predicted label
-out_field: choice
+target: choice
 
 #tree_hierarchy: attr_type.spd
 #tree_hierarchy: text.graph
@@ -140,7 +130,7 @@ use_flash_attn: false
 
 dropout: 0.5
 eval_choice_only: ${add_class_token}
-alias: ${llm.name}-${data.alias}-${graph_construct}-${in_fields}
+alias: ${llm.name}-${data.alias}-${graph_construct}-${target}
 
 #
 add_class_token: true

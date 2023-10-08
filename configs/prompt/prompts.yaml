@@ -41,7 +41,6 @@ prompt_templates:
       Your goal is to perform node classification. You are given the information of each node in a xml format. Using the given information of a node, you need to classify the node to several choices: ${data.label_description}. Remember, your answer should be in the form of the class label.
     base: >- # Cora
       ${data.task_description}\n
-  #      I will give you the following information:\n${in_field_description}\n
   demo:
     na: ''
     base: >-

@@ -12,15 +12,6 @@ defaults:
   - override /hydra/hydra_logging@_group_: none # Disable Hydra logging
   - override /hydra/job_logging@_group_: none # Disable Hydra logging
 
-#defaults:
-#  - proj/env
-#  - proj/meta_data
-#  - _self_ # To be overwritten by experimental settings
-#  - data: arxiv
-#  - model: mplm
-#  - prompt: prompts
-#  - llm: vicuna
-#  - exp: arxiv/debug
 debug: false
 
 # ! Experiments

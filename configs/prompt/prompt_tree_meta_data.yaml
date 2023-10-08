@@ -45,14 +45,3 @@ pg_size: # Size of proxy graph
   a2x_sim: ${subgraph_size}
   a3x_sim: ${subgraph_size}
   ppr: ${subgraph_size}
-
-in_field_description: null # To be initialized afterward
-#_in_field_description_lookup:
-#  choice: neighbor labels
-#  a0x_t: '<center_node_feature>: The center node feature.'
-#  a1x_t: '<first-order_smoothed_feature>: '
-#  a2x_t: second-order smoothed feature
-#  a3x_t: third-order smoothed feature
-#  a1y_t: first-order pseudo labels
-#  a2y_t: second-order pseudo labels
-#  a3y_t: third-order pseudo labels

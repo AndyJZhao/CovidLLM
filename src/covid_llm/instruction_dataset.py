@@ -75,7 +75,7 @@ class InstructionDataset(Dataset):
 
     def __getitem__(self, node_id):
         # ! Build Graph Trees
-        support_tree_list = [] # For demonstrations in ICL
+        support_tree_list = []  # For demonstrations in ICL
         if self.cfg.use_demo:
             demo_center_nodes = self.data.select_demo(self.cfg.demo.select_method, node_id)
             support_tree_list = [  # No node drop out for demo nodes
@@ -118,7 +118,8 @@ class InstructionDataset(Dataset):
 
     def collate(self, batch):
         # Key: field,  Value: The list of continuous sequence to encode
-        node_ids, prompt_tree_lol, in_text_list, out_text_list, demo_list, question_list, conversation_list = zip(*batch)
+        node_ids, prompt_tree_lol, in_text_list, out_text_list, demo_list, question_list, conversation_list = zip(
+            *batch)
         # ! Get continuous batch dataframe to be encoded
         batch_encode_cont_df = pd.concat([tree.encode_df for tree in chain.from_iterable(prompt_tree_lol)])
         if len(batch_encode_cont_df) > 0:

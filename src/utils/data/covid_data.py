@@ -408,8 +408,6 @@ class CovidData:
         # ! Initialize Prompt Related
         # Initialize classification prompt
         assert (col := f"label_{cfg.data.label_text}") in self.label_info.columns, "Unknown classification prompt mode."
-        # cfg.in_field_description = [cfg._ for _ in self.in_fields]
-        cfg.in_field_description = ''
         cfg.data.label_description = "[" + ", ".join(
             f'{_.label_token}: {_[col]}' for i, _ in self.label_info.iterrows()) + "]"
 
@@ -657,7 +655,7 @@ class CovidData:
         # ! Center node graph
         hierarchy = self.cfg.tree_hierarchy.split('.')
         label = self.df.iloc[id][self.cfg.out_field] if supervised else None
-        prompt_tree = PromptTree(data=self, id=id,
+        prompt_tree = PromptTree(self.cfg, data=self, id=id,
                                  hierarchy=hierarchy, label=label, name_alias=self.cfg.tree_node_alias,
                                  style=self.cfg.prompt.style)
         return prompt_tree
