@@ -175,105 +175,6 @@ def process_batch_instance_for_inference(left_tokenizer, batch_input_text):
     return input_ids, attention_mask.long()
 
 
-class LinearSeqEncoder(nn.Module):
-    def __init__(self, in_dim, in_len, out_dim, out_len, dropout=0.3, norm='LN', input_norm=True, output_norm=True,
-                 output_dropout=True, input_dropout=True, **kwargs):
-        super(LinearSeqEncoder, self).__init__()
-        self.in_dim, self.in_len, self.out_dim, self.out_len = in_dim, in_len, out_dim, out_len
-        self.proj = nn.Linear(input_seq_dim := in_dim * in_len, output_seq_dim := out_dim * out_len)
-        norm_layer = nn.BatchNorm1d if norm == 'BN' else nn.LayerNorm
-        if input_norm:
-            self.input_norm = norm_layer(input_seq_dim)
-        if output_norm:
-            self.output_norm = norm_layer(output_seq_dim)
-        if input_dropout:
-            self.input_dropout = nn.Dropout(dropout)
-        if output_dropout:
-            self.output_dropout = nn.Dropout(dropout)
-
-    def forward(self, input):
-        # Encode input of [bsz, in_seq_len, in_dim] to [bsz]
-        batch_size, input_seq_length, hidden_dim = input.shape
-        input = input.view(batch_size, -1)
-        if hasattr(self, 'input_norm'):
-            input = self.input_norm(input)
-        if hasattr(self, 'input_drop'):
-            input = self.input_drop(input)
-        if self.proj.weight.dtype != input.dtype:
-            logging.error(f'weight {self.proj.weight.dtype}, input {input.dtype}')
-        output = self.proj(input)
-        if hasattr(self, 'output_norm'):
-            output = self.output_norm(output)
-        output = output.view((batch_size, self.out_len, self.out_dim))
-        if hasattr(self, 'output_drop'):
-            output = self.output_drop(output)
-        return output
-
-
-class MLPEncoder(nn.Module):
-    """ An MLP Encoder with input/output dropout and input/output norm
-    Since the output layer of projection layers is the input space of LLM, we need to add input and output layers norm
-    and dropout too.
-    """
-
-    def __init__(self, in_dim, out_dim, n_layers=1, hidden_dim=None, dropout=0.3, norm='LN',
-                 input_norm=True, output_norm=True, input_dropout=True, output_dropout=True, **kwargs):
-        super(MLPEncoder, self).__init__()
-
-        self.in_dim = in_dim
-        self.out_dim = out_dim
-
-        norm_layer = nn.BatchNorm1d if norm == 'BN' else nn.LayerNorm
-
-        # Input normalization and dropout
-        if input_norm:
-            self.input_norm = norm_layer(in_dim)
-        if input_dropout:
-            self.input_dropout = nn.Dropout(dropout)
-
-        # Initialize layers
-        self.layers = nn.ModuleList()
-        if n_layers > 1:
-            self.layers.append(nn.Linear(in_dim, hidden_dim))
-            for _ in range(n_layers - 2):
-                self.layers.append(nn.Linear(hidden_dim, hidden_dim))
-            self.layers.append(nn.Linear(hidden_dim, out_dim))
-        else:  # Just a single layer from input to output (acts like LinearEncoder)
-            self.layers.append(nn.Linear(in_dim, out_dim))
-
-        # Output normalization and dropout
-        if output_norm:
-            self.output_norm = norm_layer(out_dim)
-        if output_dropout:
-            self.output_dropout = nn.Dropout(dropout)
-
-        # Activation function
-        self.relu = nn.ReLU()
-
-    def forward(self, input):
-        # Input normalization and dropout
-        if hasattr(self, 'input_norm'):
-            input = self.input_norm(input)
-        if hasattr(self, 'input_dropout'):
-            input = self.input_dropout(input)
-
-        # Hidden layers
-        for i, layer in enumerate(self.layers[:-1]):
-            input = layer(input)
-            input = self.relu(input)
-
-        # Output layer (no activation)
-        output = self.layers[-1](input)
-
-        # Output normalization and dropout
-        if hasattr(self, 'output_norm'):
-            output = self.output_norm(output)
-        if hasattr(self, 'output_dropout'):
-            output = self.output_dropout(output)
-
-        return output
-
-
 class CovidLLM(nn.Module):
     '''LoRA for LLaMa model'''
 
@@ -309,10 +210,16 @@ class CovidLLM(nn.Module):
             self.llm = LlamaForCausalLM.from_pretrained(cfg.llm.local_dir)
         self.llm.config.use_cache = False
         self.cls_token_names = class_tokens = [r.label_token for i, r in data.label_info.iterrows()]
+        fields_to_add = cfg.data.static_cols + cfg.data.dynamic_cols
+        field_names = [cfg.tree_node_alias.get(f, f) for f in fields_to_add]
+        field_tokens = sum([[f'<{f}>', f'</{f}>'] for f in field_names], [])
+        special_tokens = []
 
         special_tokens = []
         if cfg.get('add_class_token', True):
             special_tokens += class_tokens
+        if cfg.get('add_field_token', True):
+            special_tokens += field_tokens
         if cfg.get('add_pad_token', True):
             special_tokens += ['<pad>']
         if cfg.get('add_info_token', True):
@@ -410,10 +317,6 @@ class CovidLLM(nn.Module):
         # ! Prepare input
         node_ids, prompt_tree_lol, conversation_list = inputs['batch']
         # <node> [1286, 72, 19] </node> -> <node> [3, 768] emb </node>
-        if encode_dict is not None:
-            graph_emb = {f: self.encoder[f](seq.to(self.float_type).to(self.device)) for f, seq in encode_dict.items()}
-        else:
-            graph_emb = None
         batch_input_text = []
         for c in conversation_list:
             conv = self.conv_template.copy()

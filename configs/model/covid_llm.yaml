@@ -13,38 +13,8 @@ nb_padding: false
 nb_order: true
 node_dropout: 0.5
 
-tree_hierarchy: attr_type.graph_type # Best config
-target: Trend_1w
+target: t1
 
-#tree_hierarchy: attr_type.spd
-#tree_hierarchy: text.graph
-
-#graph_construct: Seq
-# @ Graph Information
-
-sim:
-  topk: 20
-  cache_template: ${path.data_cache}${data.name}/{pg_name}Top${.topk}.sim_proxy_graph
-spd:
-  max_hops: ${oc.select:data.max_spd,3}
-  cache_file: ${path.data_cache}${data.name}/Top${.max_hops}.spd_matrix
-
-ppr:
-  # Value Encoding: None stands for no value encoding; Rank group stands for value grouping
-  #  value_encoding: None
-  #  value_encoding: Rank_10 # Rank to 10 levels
-  #  sort_mat_construct_order: [ [ 0, 1, 2 ],[ 1, 0, 2 ], [ 2, 1, 0 ] ]
-  max_hops: 2
-  default_alpha: 0.25
-  cache_template: ${path.data_cache}${data.name}/Top{topk}_eps{eps}_{normalization}norm_alpha={alpha}.ppr_matrix
-  topk: 32 # Following PPRGo
-  eps: 1e-4 # Following PPRGo
-  normalization: sym # sym or row or col
-rank:
-  methods: [ ppr_0.25 ]
-  #  methods: [ ppr_0.5,  ppr_0.01 ]
-  top_k: 32 # Following PPRGo
-  hidden_dim: 128
 
 # @ Demo for In-Context-Learning
 use_demo: true
@@ -60,23 +30,7 @@ demo:
   n_samples: ${data.n_labels} # Number of demonstrations
 
 
-
-# @ Position Embedding
-#add_pos_emb_to_text: True
-add_pos_emb_to_text_emb: false
-add_pos_emb_to_graph_emb: true
-
-# @ Encoder
-encoder:
-  #  _target_: covid_llm.model.LinearSeqEncoder
-  dropout: 0.5
-  input_norm: true
-  output_norm: true
-  norm: LN
-  input_dropout: true
-  output_dropout: false
-  new_arg: true
-encoder_alias: ${encoder.dropout}do${encoder.dropout}
+# @ Agent settings
 agent_name: DeepSpeedAgent
 local_rank: 0
 save_path: ${out_dir}checkpoints/

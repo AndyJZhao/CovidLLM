@@ -25,7 +25,7 @@ def plot_length_distribution(node_text, tokenizer, g):
 
 def load_ogb_graph_structure_only(ogb_name, raw_data_path, save_path='NA'):
     graph_path = os.path.join(save_path, 'dgl_graph.bin')
-    info_path = os.path.join(save_path, 'graph_info.pkl')
+    info_path = os.path.join(save_path, 'info.pkl')
     if save_path == 'NA' or not os.path.exists(save_path):
         from ogb.nodeproppred import DglNodePropPredDataset
         data = DglNodePropPredDataset(ogb_name, root=uf.init_path(raw_data_path))

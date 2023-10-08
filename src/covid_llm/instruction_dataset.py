@@ -61,7 +61,7 @@ class InstructionDataset(Dataset):
 
         # ! Build Prompt
         demo = self.data.build_demo_prompt(support_tree_list)
-        question = self.data.prompt.question(graph_info=query_tree.prompt)
+        question = self.data.prompt.question(info=query_tree.prompt)
         in_text = self.data.prompt.human(demo=demo, question=question)
         if self.mode == 'sft':
             out_text = self.data.prompt.gpt(answer=self.data[id][self.cfg.target])

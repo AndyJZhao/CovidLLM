@@ -52,11 +52,12 @@ data:
     #    'C7M_Restrictions on internal movement',
     #    'C8NV_International travel controls',
     #    'C8V_International travel controls',
-    'H1_Public information campaigns',
-    'H2_Testing policy',
-    'H3_Contact tracing',
-    'H6M_Facial Coverings',
-    'H8M_Protection of elderly people',
+    # * Temporarily abandoned
+#    'H1_Public information campaigns',
+#    'H2_Testing policy',
+#    'H3_Contact tracing',
+#    'H6M_Facial Coverings',
+#    'H8M_Protection of elderly people',
     # @ Other ignored_cols
     #    'fips', 'Week', 'Week_start', 'Week_end' # No need to let LLM know the exact dates
   ]
