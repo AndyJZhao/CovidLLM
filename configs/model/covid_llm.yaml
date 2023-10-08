@@ -14,7 +14,7 @@ nb_order: true
 node_dropout: 0.5
 
 tree_hierarchy: attr_type.graph_type # Best config
-target: choice
+target: Trend_1w
 
 #tree_hierarchy: attr_type.spd
 #tree_hierarchy: text.graph

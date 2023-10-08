@@ -308,7 +308,7 @@ class CovidLLM(nn.Module):
         with time_logger(f'initialization of LLM decoder from {cfg.llm.local_dir}'):
             self.llm = LlamaForCausalLM.from_pretrained(cfg.llm.local_dir)
         self.llm.config.use_cache = False
-        self.cls_token_names = class_tokens = [r.label_token for i,r in data.label_info.iterrows()]
+        self.cls_token_names = class_tokens = [r.label_token for i, r in data.label_info.iterrows()]
 
         special_tokens = []
         if cfg.get('add_class_token', True):
@@ -365,31 +365,22 @@ class CovidLLM(nn.Module):
             logging.info('The LLM LLAMA is frozen except input and output embeddings.')
         self.max_tgt_len = max_tgt_len
 
-
-    def prompt_wrap(self, graph_emb, node_ids, prompt_tree_lol, input_tok_ids, node_id_to_encode_id):
-        input_tok_ids = input_tok_ids.to(self.device)  # bsz x s2
-        batch_size = input_tok_ids.shape[0]
-        # Lookup text embeddings
-        if self.llm.base_model.__class__.__name__ == 'LlamaModel':
-            inputs_embeds = self.llm.model.embed_tokens(
-                input_tok_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
-        else:
-            inputs_embeds = self.llm.model.model.embed_tokens(
-                input_tok_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
-        return inputs_embeds
-
     def forward(self, inputs):
-        node_ids, prompt_tree_lol, encode_dict, node_id_to_encode_id, conversation_list = inputs
+        node_ids, prompt_tree_lol, conversation_list = inputs
         # ! Get Graph Language
         # ! Tokenization: batch instance to input and target IDs.
         input_ids, target_ids, attention_mask = process_batch_instance(self.tokenizer, conversation_list,
                                                                        self.max_tgt_len, self.conv_template)
-        if encode_dict is not None:
-            graph_emb = {f: self.encoder[f](seq.to(self.float_type).to(self.device)) for f, seq in encode_dict.items()}
+        input_ids = input_ids.to(self.device)  # bsz x s2
+        batch_size = input_ids.shape[0]
+        # !Lookup text embeddings
+        if self.llm.base_model.__class__.__name__ == 'LlamaModel':
+            inputs_embeds = self.llm.model.embed_tokens(
+                input_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
         else:
-            graph_emb = None
-        inputs_embeds = self.prompt_wrap(graph_emb, node_ids, prompt_tree_lol, input_ids, node_id_to_encode_id)
-        target_ids = target_ids.to(self.device)
+            inputs_embeds = self.llm.model.model.embed_tokens(
+                input_ids).expand(batch_size, -1,
+                                  -1)  # bsz x s2 x embed_dim        target_ids = target_ids.to(self.device)
         attention_mask = attention_mask.to(self.device)
 
         outputs = self.llm(
@@ -417,7 +408,7 @@ class CovidLLM(nn.Module):
 
     def generate(self, inputs, choice_only=False):
         # ! Prepare input
-        node_ids, prompt_tree_lol, encode_dict, node_id_to_encode_id, conversation_list = inputs['batch']
+        node_ids, prompt_tree_lol, conversation_list = inputs['batch']
         # <node> [1286, 72, 19] </node> -> <node> [3, 768] emb </node>
         if encode_dict is not None:
             graph_emb = {f: self.encoder[f](seq.to(self.float_type).to(self.device)) for f, seq in encode_dict.items()}

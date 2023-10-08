@@ -120,17 +120,4 @@ class InstructionDataset(Dataset):
         # Key: field,  Value: The list of continuous sequence to encode
         node_ids, prompt_tree_lol, in_text_list, out_text_list, demo_list, question_list, conversation_list = zip(
             *batch)
-        # ! Get continuous batch dataframe to be encoded
-        batch_encode_cont_df = pd.concat([tree.encode_df for tree in chain.from_iterable(prompt_tree_lol)])
-        if len(batch_encode_cont_df) > 0:
-            grouped = batch_encode_cont_df.groupby('attr_type').agg({'nodes': list})
-            # encode_id: key: attr_type, value: node_id
-            encode_ids = {f: list(set(chain.from_iterable(row.nodes))) for f, row in grouped.iterrows()}
-            node_id_to_encode_id = {
-                f: {node_id: encode_id for encode_id, node_id in enumerate(nodes)}
-                for f, nodes in encode_ids.items()
-            }
-            encode_dict = {f: self.g.ndata[f][nodes] for f, nodes in encode_ids.items()}
-        else:  # No continuous attribute
-            encode_dict, node_id_to_encode_id = None, None
-        return node_ids, prompt_tree_lol, encode_dict, node_id_to_encode_id, conversation_list
+        return node_ids, prompt_tree_lol, conversation_list
