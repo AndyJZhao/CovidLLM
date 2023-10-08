@@ -20,7 +20,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from graph_text.icl import LLMForInContextLearning
 from utils.data.covid_data import CovidData
-from llm import CpuFakeDebugLLM
+from llm import CpuFakeDebucovid_llm
 from covid_llm.instruction_dataset import InstructionDataset
 from torch.utils.data import Subset
 
@@ -33,7 +33,7 @@ def run_graph_text_inference(cfg):
     full_dataset = InstructionDataset(data, cfg, cfg.mode)
     dataset = Subset(full_dataset, data.split_ids.test[:cfg.data.max_test_samples])
     if cfg.get("debug", False):
-        llm = CpuFakeDebugLLM()  # Use local CPU for faster debugging
+        llm = CpuFakeDebucovid_llm()  # Use local CPU for faster debugging
     else:
         llm = hydra.utils.instantiate(cfg.llm)
 

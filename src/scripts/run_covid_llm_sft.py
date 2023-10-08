@@ -29,7 +29,7 @@ import torch as th
 
 @time_logger()
 @hydra.main(config_path=f'{root_path}/configs', config_name='main', version_base=None)
-def train_gllm(cfg):
+def train_covid_llm(cfg):
     cfg, logger = init_experiment(cfg)
     data = CovidData(cfg=cfg)
 
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     import pstats
 
     with cProfile.Profile() as pr:
-        train_gllm()
+        train_covid_llm()
     stats = pstats.Stats(pr)
     stats.sort_stats(pstats.SortKey.TIME)
     stats.dump_stats(filename='profiling.prof')

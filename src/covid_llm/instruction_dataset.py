@@ -1,24 +1,7 @@
-#    Copyright 2023 Rohan Taori, Ishaan Gulrajani, Tianyi Zhang, Yann Dubois, Xuechen Li
-#
-#    Licensed under the Apache License, Version 2.0 (the "License");
-#    you may not use this file except in compliance with the License.
-#    You may obtain a copy of the License at
-#
-#        http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#    See the License for the specific language governing permissions and
-#    limitations under the License.
-from collections import defaultdict
 from functools import partial
 
-import numpy as np
-import pandas as pd
 import torch as th
 from torch.utils.data import Dataset, DataLoader, Subset
-from itertools import chain
 
 from utils.data.covid_data import CovidData
 from .samplers import DistributedBatchSampler
@@ -63,15 +46,7 @@ class InstructionDataset(Dataset):
         self.mode = mode
 
     def __len__(self):  # number of instances
-        return len(self.data)
-
-    def get_link_pred_info(self, f, i):
-        is_positive_edge = np.random.choice([True, False])
-        hop = 1 if len(f) == 1 else int(f[-1])
-        if is_positive_edge:
-            return f"Yes"
-        else:
-            return f"No"
+        return len(self.data.df)
 
     def __getitem__(self, id):
         # ! Build Graph Trees
@@ -99,22 +74,6 @@ class InstructionDataset(Dataset):
         ]
 
         return id, prompt_tree_list, in_text, out_text, demo, question, conversation
-
-    def get_node_subgraph_info(self, node_id, subg_nodes, node_id_to_encode_id, encode_seq):
-        subg_info = {}
-        for f in self.data.in_text_fields:
-            subg_info[f] = self.data.get_node_info(node_id, field=f)
-        for f in self.data.in_cont_fields:
-            # Add empty string to the continuous field, to be encoded in the model forward part
-            subg_info[f] = ""
-            # update cont-field to enable unique seq name: seq_name
-            seq_names = [f"{f}-{_}" for _ in subg_nodes]
-            node_id_to_encode_id[f].extend(seq_names)
-            encode_seq[f].extend(
-                self.data.get_node_info(n, field=f) for n in subg_nodes
-            )
-
-        return subg_info
 
     def collate(self, batch):
         # Key: field,  Value: The list of continuous sequence to encode

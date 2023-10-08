@@ -68,7 +68,7 @@ add_pos_emb_to_graph_emb: true
 
 # @ Encoder
 encoder:
-  #  _target_: gllm.model.LinearSeqEncoder
+  #  _target_: covid_llm.model.LinearSeqEncoder
   dropout: 0.5
   input_norm: true
   output_norm: true
@@ -119,7 +119,7 @@ use_embeds: true
 frozen_encoder: false
 frozen_llm: true
 #frozen_encoder: true
-#conv_template: gllm_v1
+#conv_template: covid_llm_v1
 conv_template: no_conv
 save_file: ${out_dir}${alias}.csv
 mode: train

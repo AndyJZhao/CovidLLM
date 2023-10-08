@@ -141,7 +141,7 @@ conv_bair_v1 = Conversation(
     sep2="</s>",
 )
 
-conv_gllm_v1 = Conversation(
+conv_covid_llm_v1 = Conversation(
     system="You are CovidLLM, a large language model for graph machine learning. You are able to "
            "understand the graph feature in both continuous and discrete form that the user provides, "
            "and assist the user with graph machine learning tasks. Follow the instructions carefully "
@@ -169,10 +169,10 @@ no_conv = Conversation(
 )
 
 
-default_conversation = conv_gllm_v1
+default_conversation = conv_covid_llm_v1
 conv_templates = {
-    "gllm_v0": conv_vicuna_v1_1,
-    "gllm_v1": conv_gllm_v1,
+    "covid_llm_v0": conv_vicuna_v1_1,
+    "covid_llm_v1": conv_covid_llm_v1,
     "no_conv": no_conv,
     # fastchat
     "bair_v1": conv_bair_v1,
