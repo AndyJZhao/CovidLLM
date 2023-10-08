@@ -73,15 +73,15 @@ class InstructionDataset(Dataset):
         else:
             return f"No"
 
-    def __getitem__(self, node_id):
+    def __getitem__(self, id):
         # ! Build Graph Trees
         support_tree_list = []  # For demonstrations in ICL
         if self.cfg.use_demo:
-            demo_center_nodes = self.data.select_demo(self.cfg.demo.select_method, node_id)
+            demo_center_nodes = self.data.select_demo(self.cfg.demo.select_method, id)
             support_tree_list = [  # No node drop out for demo nodes
                 self.data.build_prompt_tree(center_node, supervised=True)
                 for center_node in demo_center_nodes]
-        query_tree = self.data.build_prompt_tree(node_id, supervised=False)
+        query_tree = self.data.build_prompt_tree(id, supervised=False)
         prompt_tree_list = support_tree_list + [query_tree]
 
         # ! Build Prompt
@@ -89,7 +89,7 @@ class InstructionDataset(Dataset):
         question = self.data.prompt.question(graph_info=query_tree.prompt)
         in_text = self.data.prompt.human(demo=demo, question=question)
         if self.mode == 'sft':
-            out_text = self.data.prompt.gpt(answer=self.data.df.iloc[node_id][self.cfg.out_field])
+            out_text = self.data.prompt.gpt(answer=self.data[id][self.cfg.target])
         else:
             out_text = None
 
@@ -98,7 +98,7 @@ class InstructionDataset(Dataset):
             {"from": "gpt", "value": out_text},
         ]
 
-        return node_id, prompt_tree_list, in_text, out_text, demo, question, conversation
+        return id, prompt_tree_list, in_text, out_text, demo, question, conversation
 
     def get_node_subgraph_info(self, node_id, subg_nodes, node_id_to_encode_id, encode_seq):
         subg_info = {}

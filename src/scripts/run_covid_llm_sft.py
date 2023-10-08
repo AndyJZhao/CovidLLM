@@ -83,7 +83,7 @@ def train_gllm(cfg):
     epochs = min(cfg.get('max_epochs', 1000), ceil(ceil(cfg.total_steps / (len(train_data) / cfg.eq_batch_size))))
     logger.warning(f'Begin training {cfg.total_steps} steps ({epochs} epochs).')
     current_step = 0
-    is_eval = cfg.local_rank == 0 and 'c' in cfg.out_field
+    is_eval = cfg.local_rank == 0 and 'c' in cfg.target
     pbar_refresh_freq = max(agent.total_batch_steps // 100, 10)
     pbar = tqdm(total=agent.total_batch_steps, desc="Training", dynamic_ncols=True, disable=cfg.local_rank > 0)
     for epoch_i in range(epochs):

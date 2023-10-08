@@ -10,8 +10,8 @@ from collections import OrderedDict
 class PromptTree:
     def __init__(self, cfg, data, id, hierarchy, name_alias, style='xml', label=None):
         self.info_dict = info_dict = OrderedDict({
-            'Static': data.df.iloc[id][cfg.data.static_cols].T.squeeze().to_dict(),
-            'Dynamic': data.df.iloc[id][cfg.data.dynamic_cols].T.squeeze().to_dict(),
+            'Static': data[id][cfg.data.static_cols].T.squeeze().to_dict(),
+            'Dynamic': data[id][cfg.data.dynamic_cols].T.squeeze().to_dict(),
         })
 
         self.style = style

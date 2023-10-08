@@ -41,7 +41,7 @@ class LLMForInContextLearning(object):
             result.update({f"PD/{choice}.{self.data.choice_to_label_name[choice]}": cnt / len(valid_df)
                            for choice, cnt in valid_df.pred_choice.value_counts().to_dict().items()})
         sample = {f"sample_{k}": v
-                  for k, v in self.data.df.iloc[node_id].to_dict().items()}
+                  for k, v in self.data[node_id].to_dict().items()}
         self.logger.info(sample)
         self.logger.wandb_metric_log({**result, "step": step})
 
