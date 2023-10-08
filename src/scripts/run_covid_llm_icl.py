@@ -40,7 +40,7 @@ def run_graph_text_inference(cfg):
     model = LLMForInContextLearning(cfg, data, llm, logger, **cfg.model)
     for i, item in tqdm(enumerate(dataset), "Evaluating..."):
         # for i, node_id in track(enumerate(data.split_ids.test[:10]), 'Evaluating...'):
-        node_id, graph_tree_list, in_text, out_text, demo, question, _ = item
+        node_id, prompt_tree_list, in_text, out_text, demo, question, _ = item
         is_evaluate = i % cfg.eval_freq == 0 and i != 0
         model(node_id, in_text, demo, question, log_sample=is_evaluate)
         if is_evaluate:

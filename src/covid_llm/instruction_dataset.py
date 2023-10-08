@@ -75,14 +75,14 @@ class InstructionDataset(Dataset):
 
     def __getitem__(self, node_id):
         # ! Build Graph Trees
-        support_tree_list = []
+        support_tree_list = [] # For demonstrations in ICL
         if self.cfg.use_demo:
             demo_center_nodes = self.data.select_demo(self.cfg.demo.select_method, node_id)
             support_tree_list = [  # No node drop out for demo nodes
-                self.data.build_graph_tree(center_node, self.cfg.attr_mask, supervised=True)
+                self.data.build_prompt_tree(center_node, supervised=True)
                 for center_node in demo_center_nodes]
-        query_tree = self.data.build_graph_tree(node_id, self.cfg.attr_mask, supervised=False)
-        graph_tree_list = support_tree_list + [query_tree]
+        query_tree = self.data.build_prompt_tree(node_id, supervised=False)
+        prompt_tree_list = support_tree_list + [query_tree]
 
         # ! Build Prompt
         demo = self.data.build_demo_prompt(support_tree_list)
@@ -98,7 +98,7 @@ class InstructionDataset(Dataset):
             {"from": "gpt", "value": out_text},
         ]
 
-        return node_id, graph_tree_list, in_text, out_text, demo, question, conversation
+        return node_id, prompt_tree_list, in_text, out_text, demo, question, conversation
 
     def get_node_subgraph_info(self, node_id, subg_nodes, node_id_to_encode_id, encode_seq):
         subg_info = {}
@@ -118,9 +118,9 @@ class InstructionDataset(Dataset):
 
     def collate(self, batch):
         # Key: field,  Value: The list of continuous sequence to encode
-        node_ids, graph_tree_lol, in_text_list, out_text_list, demo_list, question_list, conversation_list = zip(*batch)
+        node_ids, prompt_tree_lol, in_text_list, out_text_list, demo_list, question_list, conversation_list = zip(*batch)
         # ! Get continuous batch dataframe to be encoded
-        batch_encode_cont_df = pd.concat([tree.encode_df for tree in chain.from_iterable(graph_tree_lol)])
+        batch_encode_cont_df = pd.concat([tree.encode_df for tree in chain.from_iterable(prompt_tree_lol)])
         if len(batch_encode_cont_df) > 0:
             grouped = batch_encode_cont_df.groupby('attr_type').agg({'nodes': list})
             # encode_id: key: attr_type, value: node_id
@@ -132,4 +132,4 @@ class InstructionDataset(Dataset):
             encode_dict = {f: self.g.ndata[f][nodes] for f, nodes in encode_ids.items()}
         else:  # No continuous attribute
             encode_dict, node_id_to_encode_id = None, None
-        return node_ids, graph_tree_lol, encode_dict, node_id_to_encode_id, conversation_list
+        return node_ids, prompt_tree_lol, encode_dict, node_id_to_encode_id, conversation_list

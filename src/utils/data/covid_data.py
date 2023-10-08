@@ -31,7 +31,7 @@ from utils.data.ppr import (
 from utils.data.preprocess import load_ogb_graph_structure_only
 from utils.pkg.dict2xml import dict2xml
 from utils.pkg.distributed import master_process_only, process_on_master_and_sync_by_pickle
-from .graph_tree import GraphTree
+from .prompt_tree import PromptTree
 from utils.basics import logger
 import numpy as np
 from scipy.cluster.vq import kmeans, vq
@@ -386,12 +386,11 @@ class CovidData:
     def __init__(self, cfg: DictConfig):  # Process split settings, e.g. -1/2 means first split
         self.cfg = cfg
         # ! Initialize Data Related
-        raw_data = uf.pickle_load(cfg.data.raw_data_file)
-        self.state_df = state_df = raw_data.static
-        self.df = df = raw_data.dynamic
+        self.raw_data = raw_data = uf.pickle_load(cfg.data.raw_data_file)
+        self.df = df = raw_data.merged_dynamic
         self.split_ids = splits = raw_data.splits
         self.label_info = label_info = raw_data.label_info
-        logger.info(f'Loaded meta information of {len(state_df)} states')
+        logger.info(f'Loaded meta information of {len(raw_data.static)} states')
         logger.info(f'Loaded COVID data, {len(df)} weeks in total')
 
         # ! Splits
@@ -654,32 +653,14 @@ class CovidData:
         else:
             return ''
 
-    def build_graph_tree(self, center_node, attr_mask, supervised=False):
+    def build_prompt_tree(self, id, supervised=False):
         # ! Center node graph
-        node_dropout = 0 if supervised else self.cfg.node_dropout
         hierarchy = self.cfg.tree_hierarchy.split('.')
-        node_info_list = []
-        for pg_type, pg_neighbors in self.proxy_graphs.items():
-            subg_nodes = np.array(pg_neighbors[center_node])  # ! CORRECT ONE
-            # subg_nodes = np.array([center_node] + pg_neighbors[center_node])  # PREVIOUS ONE
-            subg_nodes = self.sample_sub_graph(subg_nodes, self.cfg.pg_size[pg_type], node_dropout)
-            subg_nodes = subg_nodes[subg_nodes != -1]  # Already sorted
-            for nb_node in subg_nodes:
-                item = {'center_node': center_node, 'graph_type': pg_type, 'node': nb_node}
-                # Add leaf nodes to the tree
-                for f in self.in_fields:
-                    is_label = f in LABEL_FIELDS
-                    use_real_value = self.get_attr_mask(attr_mask.get(f, 'All'), center_node, nb_node, is_label)
-                    _item = deepcopy(item)
-                    _item.update({'attr_type': f, 'nodes': nb_node if use_real_value else -1})
-                    node_info_list.append(_item)
-
-        tree_df = pd.DataFrame.from_records(node_info_list)
-        label = self.df.iloc[center_node][self.cfg.out_field] if supervised else None
-        graph_tree = GraphTree(data=self, df=tree_df, center_node=center_node, subg_nodes=subg_nodes,
-                               hierarchy=hierarchy, label=label, name_alias=self.cfg.tree_node_alias,
-                               style=self.cfg.prompt.style)
-        return graph_tree
+        label = self.df.iloc[id][self.cfg.out_field] if supervised else None
+        prompt_tree = PromptTree(data=self, id=id,
+                                 hierarchy=hierarchy, label=label, name_alias=self.cfg.tree_node_alias,
+                                 style=self.cfg.prompt.style)
+        return prompt_tree
 
     def select_demo(self, select_method, node_id):
         if (n_demos := self.cfg.demo.n_samples) <= 0:

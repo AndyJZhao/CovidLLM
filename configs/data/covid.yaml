@@ -20,3 +20,49 @@ data:
   max_train_samples: 99999
   max_val_samples: 99999
   max_test_samples: 99999
+
+  # ! Visible Columns in DataFrame
+  static_cols:
+    [
+      'Population', 'under_20', 'over_65',
+      'White', 'Black', # 'Multiple_race', 'Not_Hispanic', 'Hispanic',
+      'medicaid_coverage', 'medicare_coverage', 'uninsured_percent',
+      'medicaid_spending', 'private_health_insurance_spending',
+      'medicare_spending_by_residence', 'health_care_spending',
+      'healthcare_utilization', 'poor_health_status', 'adults_at_high_risk',
+      'poverty_rate', 'social_vulnerability_index',
+      'Healthcare Access and Quality Index', 'Older_at_high_risk',
+      'dem_percent', 'rep_percent',# 'other_percent'
+    ]
+  dynamic_cols: [
+    'state_name',
+    # @ Infection
+    'hospitalization_per_100k',
+    'reported_cases_per_100k',
+    'previous_infection_12w',
+    # @ Vaccine
+    'Dose1_Pop_Pct',
+    'Series_Complete_Pop_Pct',
+    'Additional_Doses_Vax_Pct',
+    # @ Regulations
+    #    'C1M_School closing',
+    #    'C2M_Workplace closing',
+    #    'C3M_Cancel public events',
+    'C4M_Restrictions on gatherings',
+    'C6M_Stay at home requirements',
+    #    'C7M_Restrictions on internal movement',
+    #    'C8NV_International travel controls',
+    #    'C8V_International travel controls',
+    'H1_Public information campaigns',
+    'H2_Testing policy',
+    'H3_Contact tracing',
+    'H6M_Facial Coverings',
+    'H8M_Protection of elderly people',
+    # @ Other ignored_cols
+    #    'fips', 'Week', 'Week_start', 'Week_end' # No need to let LLM know the exact dates
+  ]
+  label_cols: [
+    'Risk_level', 'Risk_level_1w',
+    'Risk_level_2w', 'Risk_level_3w', 'Risk_level_4w', 'Trend', 'Trend_1w',
+    'Trend_2w', 'Trend_3w', 'Trend_4w',
+  ]

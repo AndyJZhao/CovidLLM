@@ -366,7 +366,7 @@ class CovidLLM(nn.Module):
         self.max_tgt_len = max_tgt_len
 
 
-    def prompt_wrap(self, graph_emb, node_ids, graph_tree_lol, input_tok_ids, node_id_to_encode_id):
+    def prompt_wrap(self, graph_emb, node_ids, prompt_tree_lol, input_tok_ids, node_id_to_encode_id):
         input_tok_ids = input_tok_ids.to(self.device)  # bsz x s2
         batch_size = input_tok_ids.shape[0]
         # Lookup text embeddings
@@ -379,7 +379,7 @@ class CovidLLM(nn.Module):
         return inputs_embeds
 
     def forward(self, inputs):
-        node_ids, graph_tree_lol, encode_dict, node_id_to_encode_id, conversation_list = inputs
+        node_ids, prompt_tree_lol, encode_dict, node_id_to_encode_id, conversation_list = inputs
         # ! Get Graph Language
         # ! Tokenization: batch instance to input and target IDs.
         input_ids, target_ids, attention_mask = process_batch_instance(self.tokenizer, conversation_list,
@@ -388,7 +388,7 @@ class CovidLLM(nn.Module):
             graph_emb = {f: self.encoder[f](seq.to(self.float_type).to(self.device)) for f, seq in encode_dict.items()}
         else:
             graph_emb = None
-        inputs_embeds = self.prompt_wrap(graph_emb, node_ids, graph_tree_lol, input_ids, node_id_to_encode_id)
+        inputs_embeds = self.prompt_wrap(graph_emb, node_ids, prompt_tree_lol, input_ids, node_id_to_encode_id)
         target_ids = target_ids.to(self.device)
         attention_mask = attention_mask.to(self.device)
 
@@ -417,7 +417,7 @@ class CovidLLM(nn.Module):
 
     def generate(self, inputs, choice_only=False):
         # ! Prepare input
-        node_ids, graph_tree_lol, encode_dict, node_id_to_encode_id, conversation_list = inputs['batch']
+        node_ids, prompt_tree_lol, encode_dict, node_id_to_encode_id, conversation_list = inputs['batch']
         # <node> [1286, 72, 19] </node> -> <node> [3, 768] emb </node>
         if encode_dict is not None:
             graph_emb = {f: self.encoder[f](seq.to(self.float_type).to(self.device)) for f, seq in encode_dict.items()}
@@ -437,7 +437,7 @@ class CovidLLM(nn.Module):
         start_time = time.time()
         batch_input_ids, attention_mask = process_batch_instance_for_inference(
             self.left_tokenizer, batch_input_text)
-        batch_inputs_embeds = self.prompt_wrap(graph_emb, node_ids, graph_tree_lol, batch_input_ids,
+        batch_inputs_embeds = self.prompt_wrap(graph_emb, node_ids, prompt_tree_lol, batch_input_ids,
                                                node_id_to_encode_id)
         attention_mask = attention_mask.to(self.device)
         # Mask embedding attn_mask=0 to zeros
@@ -499,7 +499,7 @@ class CovidLLM(nn.Module):
 
     def generate_prob(self, inputs):
         # ! Prepare input
-        node_ids, graph_tree_lol, encode_seq, node_id_to_encode_id, conversation_list = inputs['batch']
+        node_ids, prompt_tree_lol, encode_seq, node_id_to_encode_id, conversation_list = inputs['batch']
         # <node> [1286, 72, 19] </node> -> <node> [3, 768] emb </node>
         emb = {f: self.encoder[f](seq.to(self.float_type).to(self.device)) for f, seq in encode_seq.items()}
         prompt = []

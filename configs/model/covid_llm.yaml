@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - /prompt/graph_tree_meta_data
+  - /prompt/prompt_tree_meta_data
 model:
   name: CovidLLM
 
@@ -61,7 +61,7 @@ use_demo: true
 demo:
   #  select_method: first # Fixed seed examples for every sample
   select_method: max_degree # Fixed seed examples for every sample
-  template: '{graph_tree_info}The answer is {label}.'
+  template: '{prompt_tree_info}The answer is {label}.'
   #  select: class-prototype # Select center of each class cluster
   #  select: BM25 # Use BM25 for dynamic retrieval
   #  select: BM25 # Randomly select seed examples

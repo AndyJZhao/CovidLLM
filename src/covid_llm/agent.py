@@ -99,7 +99,7 @@ class Agent:
     @th.no_grad()
     def predict(self, batch, choice_only=False):
         self.model.eval()
-        node_ids, graph_tree_lol, encode_seq, node_id_to_encode_id, conversation_list = batch
+        node_ids, prompt_tree_lol, encode_seq, node_id_to_encode_id, conversation_list = batch
         gold_text = [conv[1]['value'] for conv in conversation_list]
         inputs = {
             'batch': batch,
