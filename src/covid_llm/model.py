@@ -161,7 +161,7 @@ def process_batch_instance(tokenizer, conversation_list, max_tgt_len, conv_templ
     return input_ids.to(device), target_ids.to(device), attention_mask.long().to(device)
 
 
-def process_batch_instance_for_inference(left_tokenizer, batch_input_text):
+def process_batch_instance_for_inference(left_tokenizer, batch_input_text, device):
     input_ids = left_tokenizer(
         batch_input_text,
         return_tensors="pt",
@@ -172,7 +172,7 @@ def process_batch_instance_for_inference(left_tokenizer, batch_input_text):
     ).input_ids
     attention_mask = input_ids.ne(left_tokenizer.pad_token_id)
     assert attention_mask.size() == input_ids.size()
-    return input_ids, attention_mask.long()
+    return input_ids.to(device), attention_mask.long().to(device)
 
 
 class CovidLLM(nn.Module):
@@ -330,7 +330,7 @@ class CovidLLM(nn.Module):
 
         start_time = time.time()
         batch_input_ids, attention_mask = process_batch_instance_for_inference(
-            self.left_tokenizer, batch_input_text)
+            self.left_tokenizer, batch_input_text, self.device)
         batch_inputs_embeds = self.get_input_embeddings(batch_input_ids)
         attention_mask = attention_mask.to(self.device)
         # Mask embedding attn_mask=0 to zeros
@@ -341,7 +341,6 @@ class CovidLLM(nn.Module):
                 inputs_embeds=masked_batch_embedding,
                 attention_mask=attention_mask,
                 max_new_tokens=inputs['max_tgt_len'] if not choice_only else 3,
-                temperature=max(float(inputs['temperature']), 0.01),
                 # Too low temp leads to inf prob error.
                 output_scores=choice_only,
                 use_cache=True,
@@ -368,7 +367,6 @@ class CovidLLM(nn.Module):
                     output = self.llm.generate(
                         inputs_embeds=input_embeds,
                         max_new_tokens=inputs['max_tgt_len'] if not choice_only else 3,
-                        temperature=max(float(inputs['temperature']), 0.01),  # Too low temp leads to inf prob error.
                         output_scores=choice_only,
                         use_cache=True,
                         return_dict_in_generate=choice_only,
@@ -421,8 +419,7 @@ class CovidLLM(nn.Module):
                 output = self.llm.generate(
                     inputs_embeds=input_embeds,
                     max_new_tokens=inputs['max_tgt_len'],
-                    temperature=max(float(inputs['temperature']), 0.01),  # Too low temp leads to inf prob error.
-                    do_sample=True,
+                    do_sample=False,
                     use_cache=True,
                     stopping_criteria=[stopping_criteria],
                 )

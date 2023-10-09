@@ -6,7 +6,6 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from utils.basics import logger
 from .llm import LLM
-
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
 

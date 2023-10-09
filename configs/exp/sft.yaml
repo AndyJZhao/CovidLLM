@@ -2,7 +2,7 @@
 
 
 mode: sft
-eval_freq: 100
+eval_freq: 50
 data:
   max_eval_samples: 999999
 use_demo: false
