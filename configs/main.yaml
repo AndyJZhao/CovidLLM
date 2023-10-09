@@ -39,7 +39,7 @@ slurm_id: ${oc.env:SLURM_JOB_ID,null}
 logging:
   level: info
   log_wandb_metric_to_stdout: False
-code_version: 14.2
+code_version: 0.11
 
 # @ ??
 hydra:

@@ -66,8 +66,6 @@ eval_freq: 30
 save_freq: 30000
 max_epochs: 9999
 total_steps: 700 #Number of train steps
-#use_lora: true
-use_lora: false
 use_embeds: true
 frozen_encoder: false
 frozen_llm: true

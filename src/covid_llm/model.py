@@ -246,7 +246,7 @@ class CovidLLM(nn.Module):
                                     for id, _ in data.label_info.iterrows()})
         self.lname_to_lid = self.lid_to_lname.inverse
 
-        if self.cfg.use_lora:
+        if self.cfg.lora.r > 0:
             # add the lora module
             peft_config = LoraConfig(
                 task_type=TaskType.CAUSAL_LM,
@@ -368,6 +368,7 @@ class CovidLLM(nn.Module):
                         inputs_embeds=input_embeds,
                         max_new_tokens=inputs['max_tgt_len'] if not choice_only else 3,
                         output_scores=choice_only,
+                        do_sample=False,
                         use_cache=True,
                         return_dict_in_generate=choice_only,
                     )
@@ -387,48 +388,3 @@ class CovidLLM(nn.Module):
             outputs['loop_generated_text'] = loop_outputs
             self.logger.info(f"LOOP inference time: {time.time() - start_time:.2f} seconds")
         return outputs
-
-    def generate_prob(self, inputs):
-        # ! Prepare input
-        node_ids, prompt_tree_lol, encode_seq, node_id_to_encode_id, conversation_list = inputs['batch']
-        # <node> [1286, 72, 19] </node> -> <node> [3, 768] emb </node>
-        emb = {f: self.encoder[f](seq.to(self.float_type).to(self.device)) for f, seq in encode_seq.items()}
-        prompt = []
-        for c in conversation_list:
-            conv = self.conv_template.copy()
-            conv.append_message(conv.roles[0], c[0]['value'])
-            # conv.append_message(conv.roles[1], self.gpt_response_prompt) # ASSISTANT: The answer is:
-            # conv.append_message(conv.roles[1], None) # ASSISTANT:
-            # Remove Gold response
-            _prompt = conv.get_prompt().strip(conv.sep2)
-            prompt.append(_prompt)
-
-        input_id_list = self.tokenizer(prompt).input_ids
-        outputs = []
-
-        # ! Generate one by one as batch generation requires adding <pad> tokens to prompt and leads to confusion
-        for i, (node_id, input_ids) in enumerate(zip(node_ids, input_id_list)):
-            input_ids = th.as_tensor(input_ids).view(1, -1).to(self.device)
-            input_embeds = self.prompt_wrap(emb, [node_id], input_ids, node_id_to_encode_id)
-            # Define stopping criteria for generation
-            conv = self.conv_template.copy()
-            stop_str = conv.sep if conv.sep_style != conversation_lib.SeparatorStyle.TWO else conv.sep2
-            stopping_criteria = KeywordsStoppingCriteria([stop_str], self.tokenizer, input_ids)
-            # Run model inference
-            with th.inference_mode():
-                output = self.llm.generate(
-                    inputs_embeds=input_embeds,
-                    max_new_tokens=inputs['max_tgt_len'],
-                    do_sample=False,
-                    use_cache=True,
-                    stopping_criteria=[stopping_criteria],
-                )
-
-            # Decode output tokens
-            out_text = self.tokenizer.decode(output[0], skip_special_tokens=False)
-            out_text = out_text.strip().rstrip(stop_str).strip()
-            outputs.append(out_text)
-
-        return {'dialog': [p + o for p, o in zip(prompt, outputs)],
-                'generated_text': outputs,
-                }
