@@ -9,7 +9,7 @@ data:
   text:
     mode: label_name # How to generate text for each node?
   task_description: >-
-    You are an assistant that predicts epidemic trends. You are going to choose the correct answer from several choices of categories: ${data.label_description}
+    You are an assistant that predicts epidemic trends. You are going to predict the ${target_description} from several choices: ${data.label_description}
   label_description: '' # To be initialized afterward
   label_text: name
 

@@ -63,10 +63,7 @@ class Agent:
         for split, eval_iter in eval_iter_dict.items():
             eval_res = defaultdict(list)
             for eval_batch in eval_iter:
-                if self.cfg.use_fwd_eval:
-                    output = self.forward_eval(eval_batch, res_prefix='')
-                else:
-                    output = self.predict(eval_batch, self.cfg.eval_choice_only)
+                output = self.predict(eval_batch, self.cfg.eval_choice_only)
                 for item, value in output.items():
                     eval_res[item].append(value)
             eval_res = {k: np.concatenate(v) if isinstance(v[0], Iterable) else np.array(v)
@@ -119,31 +116,6 @@ class Agent:
                 [self.model.match_label_from_text(text) for text in batch_output['loop_generated_text']])
         return batch_output
 
-    @th.no_grad()
-    def forward_eval(self, batch, res_prefix=''):
-        self.model.eval()
-        outputs, targets = self.forward(batch)
-        batch_size, seq_len = targets.shape
-        loss = outputs.loss
-        gpt_gen_target_mask = (targets != IGNORE_INDEX).reshape(-1)  # B* (S-1)
-        cls_token_mask = th.tensor([x.item() in self.model.cls_tokens for x in targets.reshape(-1)]).to(
-            gpt_gen_target_mask.device)
-        target_cls_mask = gpt_gen_target_mask & cls_token_mask  # [B*S]
-        # Lookup by target_cls_mask
-        gt_cls_tokens = targets.reshape(-1)[target_cls_mask]
-        pred_cls_logits = outputs.logits.reshape(batch_size * seq_len, -1)[target_cls_mask]
-        # Readout max logits
-        class_pred = pred_cls_logits[:, self.model.choice_ids].argmax(-1).tolist()
-        generated_cls_text = [self.model.cls_token_names[c] for c in class_pred]
-        gold_labels = self.model.tokenizer.convert_ids_to_tokens(gt_cls_tokens)
-        output = {}
-        output[f'{res_prefix}loss'] = loss.item()
-        output[f'{res_prefix}label'] = gold_labels
-        output[f'{res_prefix}pred'] = generated_cls_text
-        output[f'{res_prefix}dialog'] = [f"{prompt[0]['value']}GPT:{generated_cls_text[i]}"
-                                         for i, prompt in enumerate(batch[4])]
-        return output
-
     def train_model_batch(self, batch, current_step=0):
         self.model.train()
         outputs, targets = self.forward(batch)  # Model forward
@@ -181,50 +153,6 @@ class Agent:
         self.model.llm.config.use_cache = False
         self.torch_distributed_barrier()
         self.logger.info(f"Saved model into {path}")
-
-    def load_stage_1_parameters(self, path):
-        if path is None or not os.path.exists(path):
-            self.logger.critical(f'Load {path} failed!!!, skipped loading')
-        ckpt = th.load(path + 'pytorch_model.pt', map_location=th.device('cpu'))
-        self.model.load_state_dict(ckpt, strict=False)
-
-    def load_stage_1_parameters_prev(self, path):
-        # Assuming `model` is your new model and `checkpoint` is the loaded checkpoint dictionary
-        checkpoint = th.load(path, map_location=th.device('cpu'))
-
-        model_dict = self.model.state_dict()
-
-        # Filter out the embedding weights from the checkpoint
-        filter_list = ['llama_model.base_model.model.model.embed_tokens.weight',
-                       'llama_model.base_model.model.lm_head.weight']
-        checkpoint_filtered = {k: v for k, v in checkpoint.items() if k in model_dict and k not in filter_list}
-        # Update the existing model parameters from the checkpoint.
-        model_dict.update(checkpoint_filtered)
-
-        # Set the updated weights to the model
-        self.model.load_state_dict(model_dict, strict=False)
-
-        if 'llama_model.base_model.model.model.embed_tokens.weight' in checkpoint:
-            # Now handle the embedding weights separately
-            old_embedding_weight = checkpoint['llama_model.base_model.model.model.embed_tokens.weight']
-            new_embedding_weight = self.model.llm.base_model.model.model.embed_tokens.weight
-
-            # Copy the old weights to the new weights.
-            new_embedding_weight.data[:old_embedding_weight.size(0)] = old_embedding_weight.data
-
-            # Initialize the new token (you can use any initialization method here)
-            # new_embedding_weight.data[old_embedding_weight.size(0):].normal_(mean=0.0, std=0.02)
-
-            # Assign the new weights to the embedding layer
-            self.model.llm.base_model.model.model.embed_tokens.weight = th.nn.Parameter(
-                new_embedding_weight.clone())
-
-        if 'llama_model.base_model.model.lm_head.weight' in checkpoint:
-            old_lm_head_weight = checkpoint['llama_model.base_model.model.lm_head.weight']
-            new_lm_head_weight = self.model.llm.base_model.model.lm_head.weight
-            new_lm_head_weight.data[:old_lm_head_weight.size(0)] = old_lm_head_weight.data
-            # new_lm_head_weight[old_lm_head_weight.size(0):].normal_(mean=0.0, std=0.02)
-            self.model.llm.base_model.model.lm_head.weight = th.nn.Parameter(new_lm_head_weight.clone())
 
 
 class DeepSpeedAgent(Agent):

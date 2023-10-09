@@ -27,7 +27,7 @@ prompt:
     _target_: graph_text.prompts.Prompt
     template: ${prompt_templates.gpt[${gpt_prompt}]}
 
-_target_description:
+_target_description_lookup:
   r0: risk of hospitalization for the current week
   r1: risk of hospitalization for the next week
   r2: risk of hospitalization for the two weeks later
@@ -38,7 +38,7 @@ _target_description:
   t2: trend of hospitalization for the current week
   t3: trend of hospitalization for the current week
   t4: trend of hospitalization for the current week
-
+target_description: ${_target_description_lookup.${target}}
 prompt_templates:
   human:
     # @ human
@@ -85,7 +85,7 @@ prompt_templates:
       <question>What's the topic of the target academic paper with the neighborhood label information above?${data.label_description}</question>\n
       <answer>{answer}</answer>
     sft: >-
-      \n{info}\nBased on the given information above, your goal is to predict the ${_target_description.${target}}. Remember, your answer should be in the form of the class label.\n
+      \n{info}\nBased on the given information above, your goal is to predict the ${target_description}. Remember, your answer should be in the form of the class label.\n
   gpt:
     base: >- # Researcher Arxiv
       The answer is: {answer}.

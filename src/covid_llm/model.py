@@ -148,7 +148,7 @@ def build_one_instance_supervised(tokenizer, sources, conv_template):
     return [], input_ids, targets
 
 
-def process_batch_instance(tokenizer, conversation_list, max_tgt_len, conv_template):
+def process_batch_instance(tokenizer, conversation_list, max_tgt_len, conv_template, device):
     _, batch_input_ids, batch_target_ids = build_one_instance_supervised(tokenizer, conversation_list,
                                                                          conv_template)
     input_ids = rnn.pad_sequence(batch_input_ids, batch_first=True, padding_value=tokenizer.pad_token_id)
@@ -158,7 +158,7 @@ def process_batch_instance(tokenizer, conversation_list, max_tgt_len, conv_templ
     target_ids = target_ids[:, :max_tgt_len]
     attention_mask = input_ids.ne(tokenizer.pad_token_id)
     assert attention_mask.size() == input_ids.size()
-    return input_ids, target_ids, attention_mask.long()
+    return input_ids.to(device), target_ids.to(device), attention_mask.long().to(device)
 
 
 def process_batch_instance_for_inference(left_tokenizer, batch_input_text):
@@ -272,13 +272,7 @@ class CovidLLM(nn.Module):
             logging.info('The LLM LLAMA is frozen except input and output embeddings.')
         self.max_tgt_len = max_tgt_len
 
-    def forward(self, inputs):
-        node_ids, prompt_tree_lol, conversation_list = inputs
-        # ! Get Graph Language
-        # ! Tokenization: batch instance to input and target IDs.
-        input_ids, target_ids, attention_mask = process_batch_instance(self.tokenizer, conversation_list,
-                                                                       self.max_tgt_len, self.conv_template)
-        input_ids = input_ids.to(self.device)  # bsz x s2
+    def get_input_embeddings(self, input_ids):
         batch_size = input_ids.shape[0]
         # !Lookup text embeddings
         if self.llm.base_model.__class__.__name__ == 'LlamaModel':
@@ -286,17 +280,23 @@ class CovidLLM(nn.Module):
                 input_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
         else:
             inputs_embeds = self.llm.model.model.embed_tokens(
-                input_ids).expand(batch_size, -1,
-                                  -1)  # bsz x s2 x embed_dim        target_ids = target_ids.to(self.device)
-        attention_mask = attention_mask.to(self.device)
+                input_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
+        return inputs_embeds
 
+    def forward(self, inputs):
+        node_ids, prompt_tree_lol, conversation_list = inputs
+        # ! Get Graph Language
+        # ! Tokenization: batch instance to input and target IDs.
+        input_ids, target_ids, attention_mask = process_batch_instance(self.tokenizer, conversation_list,
+                                                                       self.max_tgt_len, self.conv_template,
+                                                                       self.device)
+        inputs_embeds = self.get_input_embeddings(input_ids)
         outputs = self.llm(
             inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,
             return_dict=True,
             labels=target_ids,
         )
-
         return outputs, target_ids
 
     def match_label_from_text(self, text):
