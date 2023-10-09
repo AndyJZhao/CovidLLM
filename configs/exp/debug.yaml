@@ -1,7 +1,9 @@
 # @package _global_
+defaults:
+  - /exp/sft
 env:
   vars: # @ To be initialized by os.env
-    wandb_proj: MPLM-Debug
+    wandb_proj: CovidLLM-Debug
 logging:
   level: debug
 debug: true

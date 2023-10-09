@@ -64,7 +64,7 @@ def init_experiment(cfg):
         # init_process_group("nccl", init_method="proj://")
         init_process_group("nccl", init_method="env://")
 
-    # In mplm working directory is initialized by mplm and shared by LM and GNN submodules.
+    # In CovidLLM working directory is initialized by CovidLLM and shared by LM and GNN submodules.
     cfg.uid = generate_unique_id(cfg)
     init_path([cfg.out_dir, cfg.working_dir])
     cfg_out_file = cfg.out_dir + 'hydra_cfg.yaml'

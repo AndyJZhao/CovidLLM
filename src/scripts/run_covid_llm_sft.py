@@ -33,8 +33,7 @@ def train_covid_llm(cfg):
     cfg, logger = init_experiment(cfg)
     data = CovidData(cfg=cfg)
 
-    is_cpu_debug = not th.cuda.is_available()
-    if is_cpu_debug:
+    if not th.cuda.is_available():
         cfg.llm.base_model = 'tinygpt'
         cfg.use_bf16 = False
     else:
@@ -96,7 +95,7 @@ def train_covid_llm(cfg):
             logger.wandb_metric_log({**results, **{'train/epoch': epoch_i}})
             agent.torch_distributed_barrier()
 
-            if current_step % cfg.save_freq == 0 and epoch_i > 0 and not is_cpu_debug:
+            if current_step % cfg.save_freq == 0 and epoch_i > 0 and th.cuda.is_available():
                 agent.save_model(cfg.save_path, current_step)
             if current_step % pbar_refresh_freq == 0:
                 pbar.update(pbar_refresh_freq)

@@ -5,7 +5,6 @@ model:
   name: CovidLLM
 
 # @ GraphText Settings
-graph_construct: spd0.spd1
 #graph_construct: spd1.spd2
 subgraph_size: 5
 #  title: 1stHopOnly
@@ -84,7 +83,7 @@ use_flash_attn: false
 
 dropout: 0.5
 eval_choice_only: ${add_class_token}
-alias: ${llm.name}-${data.alias}-${graph_construct}-${target}
+alias: ${llm.name}-${data.alias}-${target}
 
 #
 add_class_token: true
