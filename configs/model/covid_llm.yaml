@@ -8,7 +8,7 @@ model:
 graph_construct: spd0.spd1
 #graph_construct: spd1.spd2
 subgraph_size: 5
-  #  title: 1stHopOnly
+#  title: 1stHopOnly
 nb_padding: false
 nb_order: true
 node_dropout: 0.5
@@ -51,12 +51,13 @@ lora:
 #  modules_to_save: [ embed_tokens, lm_head ]
 
 # @ EVALUATE
+add_loop_inference: false
 metrics: [ 'acc' ]
 eval_embeds_path: null
 eval_sets: [ 'train', 'val' , 'test' ]
 #eval_sets: [ 'train']
 choice_readout_pos: 0
-min_eval_step: 100
+min_eval_step: 10
 log_path: null
 exp_name: null
 max_tgt_len: 2048 # the maximum sequence length to be generated

@@ -301,11 +301,11 @@ class CovidLLM(nn.Module):
 
     def match_label_from_text(self, text):
         if self.cfg.add_class_token:
-            splited = text.replace(':', '').rstrip('.').split(' ')
-            matched = [cls for cls in self.cls_token_names if cls in splited]
+            predicted_tokens = self.tokenizer(text).input_ids
+            matched = [self.id_to_tok[cls] for cls in self.cls_tokens if cls in predicted_tokens]
         else:
             text = text.replace('<s>', '')
-            matched = [label_name for label_id, label_name in self.lid_to_lname.items() if label_name in text]
+            matched = [label_name for label_id, label_name in self.lid_to_lname.items() if label_id in text]
         if len(matched) == 0:
             return text, False
         elif len(matched) == 1:
@@ -331,8 +331,7 @@ class CovidLLM(nn.Module):
         start_time = time.time()
         batch_input_ids, attention_mask = process_batch_instance_for_inference(
             self.left_tokenizer, batch_input_text)
-        batch_inputs_embeds = self.prompt_wrap(graph_emb, node_ids, prompt_tree_lol, batch_input_ids,
-                                               node_id_to_encode_id)
+        batch_inputs_embeds = self.get_input_embeddings(batch_input_ids)
         attention_mask = attention_mask.to(self.device)
         # Mask embedding attn_mask=0 to zeros
         masked_batch_embedding = batch_inputs_embeds * attention_mask.unsqueeze(-1).to(batch_inputs_embeds.dtype)
@@ -363,7 +362,7 @@ class CovidLLM(nn.Module):
             start_time = time.time()
             for i, (node_id, input_ids) in enumerate(zip(node_ids, input_id_list)):
                 input_ids = th.as_tensor(input_ids).view(1, -1).to(self.device)
-                input_embeds = self.prompt_wrap(graph_emb, [node_id], input_ids, node_id_to_encode_id)
+                input_embeds = self.get_input_embeddings(input_ids)
                 # Run model inference
                 with th.inference_mode():
                     output = self.llm.generate(

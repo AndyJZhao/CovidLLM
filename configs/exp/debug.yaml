@@ -7,3 +7,6 @@ logging:
 debug: true
 data:
   max_eval_samples: 50
+  max_test_samples: 50
+total_steps: 50
+eval_freq: 20

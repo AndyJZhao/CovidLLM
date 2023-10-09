@@ -70,7 +70,7 @@ class Agent:
                         for k, v in eval_res.items()}
             results.update({f'{split}/{k}': np.array(eval_res[k]).mean()
                             for k in ['loss', 'token_acc'] if k in eval_res})
-            logger.info(f'Example generated output in {split}: {eval_res["dialog"][:3]}\n\n\n')
+            logger.info(f'Example generated output in {split}: {eval_res["dialog"][:2]}\n\n\n')
             label, pred = eval_res['label'], eval_res['pred']
             if not self.cfg.add_class_token:
                 results[f'{split}_valid_choice_rate'] = valid_choice_rate = np.mean(eval_res['is_valid'])
@@ -96,7 +96,7 @@ class Agent:
     @th.no_grad()
     def predict(self, batch, choice_only=False):
         self.model.eval()
-        node_ids, prompt_tree_lol, encode_seq, node_id_to_encode_id, conversation_list = batch
+        node_ids, prompt_tree_lol, conversation_list = batch
         gold_text = [conv[1]['value'] for conv in conversation_list]
         inputs = {
             'batch': batch,
