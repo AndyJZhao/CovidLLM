@@ -34,27 +34,6 @@ def get_stratified_subset_split(labels, label_subset, valid_ids, n_split_samples
     return split_ids
 
 
-def initialize_label_and_choices(all_label_info, label_subset=None, use_alphabetical_choice=True):
-    if label_subset is not None:
-        label_info = all_label_info.iloc[label_subset].reset_index(drop=True)
-    else:
-        label_info = all_label_info
-    if len(label_info) > 26 or (not use_alphabetical_choice):
-        label_info["choice"] = [f"<c{i}>" for i in range(len(label_info))]
-    else:  # Alphabetical
-        label_info["choice"] = [string.ascii_uppercase[i] for i in range(len(label_info))]
-    choice_to_label_name = bidict()
-    choice_to_label_id = bidict()
-    raw_label_id_to_label_id = bidict()
-    label_info.rename(columns={'label_id': 'raw_label_id'}, inplace=True)
-    label_info['label_id'] = np.arange(len(label_info))
-    for i, row in label_info.iterrows():
-        choice_to_label_name[row["choice"]] = row["label_name"]
-        choice_to_label_id[row["choice"]] = row["label_id"]
-        raw_label_id_to_label_id[row["raw_label_id"]] = row["label_id"]
-    return label_info, choice_to_label_id, choice_to_label_name, raw_label_id_to_label_id
-
-
 def generate_few_shot_split(n_labels, g, split_ids, n_demo_per_class):
     demo_ids = []
     labels = th.tensor(g.ndata['label'])  # assuming the label is stored in graph ndata

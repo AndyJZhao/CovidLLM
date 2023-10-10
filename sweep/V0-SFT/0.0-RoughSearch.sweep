@@ -1,0 +1,39 @@
+# sw sweep/V0-SFT/0.0-RoughSearch.sweep
+command:
+  - ${interpreter}
+  - sweep/scripts/hydra_sweep_launcher.py
+  - src/scripts/run_covid_llm_sft.py
+  - -t # For torchrun launch
+  - use_deepspeed=true use_wandb=true
+  - ${args}
+method: grid # Bayesian
+metric:
+  goal: maximize
+  name: val_acc
+name: 0.0-RoughSearch
+parameters:
+  # ! Common Exp Settings
+  total_steps:
+    values:
+      - 1200
+  llm.base_model:
+    values:
+      - llama2-7b
+      - llama2-7b-chat
+  lora.r:
+    values:
+      - -1
+      - 2
+      - 8
+      - 16
+      - 32
+  lr:
+    values:
+      - 1e-4
+      - 5e-5
+      - 2e-5
+      - 1e-5
+  target:
+    values:
+      - r1 # Risk for the next week
+      - t1 # Trend for the next week
