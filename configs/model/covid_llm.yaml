@@ -6,7 +6,7 @@ model:
 
 # @ GraphText Settings
 #graph_construct: spd1.spd2
-subgraph_size: 5
+input_weeks: 5
 #  title: 1stHopOnly
 nb_padding: false
 nb_order: true
