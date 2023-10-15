@@ -5,7 +5,8 @@ data:
   name: Covid # To be overwritten by dataset specific values.
   alias: Covid
   raw_data_file: data/processed.pkl
-
+  split: random
+#  split: by_time
   text:
     mode: label_name # How to generate text for each node?
   task_description: >-
