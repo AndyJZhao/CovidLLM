@@ -1,12 +1,10 @@
 # @package _global_
-defaults:
-  - /prompt/prompt_tree_meta_data
 model:
   name: CovidLLM
 
 # @ GraphText Settings
 #graph_construct: spd1.spd2
-input_weeks: 5
+in_weeks: 2
 #  title: 1stHopOnly
 nb_padding: false
 nb_order: true

@@ -2,7 +2,7 @@ import string
 
 import hydra.utils
 import torch as th
-
+from tqdm import tqdm
 th.set_num_threads(1)
 
 from bidict import bidict
@@ -13,6 +13,7 @@ import utils.basics as uf
 from .prompt_tree import PromptTree
 from utils.basics import logger
 import numpy as np
+from functools import partial
 
 
 def get_stratified_subset_split(labels, label_subset, valid_ids, n_split_samples):
@@ -100,7 +101,16 @@ class CovidData:
         self.prompt = hydra.utils.instantiate(cfg.prompt)
         uf.logger.info(self.prompt.human)
 
+        # ! Initialize Sequential Data
+        if cfg.in_weeks > 1:
+            for col in tqdm(cfg.data.dynamic_cols, 'Processing sequential data'):
+                self.df[col] = df.apply(partial(self.get_val, col=col), axis=1)
         return
+
+    def get_val(self, r, col):
+        week_ids = {i: np.where(self.df.uid == f'{r.state_name}-W{r.week_id - i}') for i in range(self.cfg.in_weeks)}
+        seq = [self.df.iloc[week_id][col] if week_id != None else 'NA' for week_id in week_ids]
+        return str(seq)
 
     def __getitem__(self, item):
         return self.df.iloc[item]
