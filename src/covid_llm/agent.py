@@ -64,6 +64,9 @@ class Agent:
             eval_res = defaultdict(list)
             for eval_batch in eval_iter:
                 output = self.predict(eval_batch, self.cfg.eval_choice_only)
+                # Update dataframe to save
+                for col in ['dialog', 'confidence', 'pred']:
+                    self.data.df.iloc[list(eval_batch[0])][col] = output[col]
                 for item, value in output.items():
                     eval_res[item].append(value)
             eval_res = {k: np.concatenate(v) if isinstance(v[0], Iterable) else np.array(v)
@@ -83,13 +86,7 @@ class Agent:
                 results[f'{split}_loop_inf_acc'] = np.mean(label == eval_res['loop_pred']) if len(label) == len(
                     pred) else -1
                 compare_eval(split, results, pred, eval_res['loop_pred'], logger)
-            if 'fwd_pred' in eval_res:
-                results[f'{split}_fwd_inf_acc'] = np.mean(label == eval_res['fwd_pred']) if len(label) == len(
-                    pred) else -1
-                compare_eval(split, results, pred, eval_res['fwd_pred'], logger)
-                # print(f'label {label[:5]}\n\nPred {pred[:5]}\n\nForward Pred:{eval_res["fwd_pred"][:5]}')
-                # results[f'{split}_fwd_acc'] = np.mean(label == eval_res['fwd_pred']) if len(label) == len(pred)
-                # else -1
+
         logger.warning(results)
         return results
 
@@ -106,6 +103,7 @@ class Agent:
         }
         batch_output = self.model.generate(inputs, choice_only)
         # print(batch_output) # For debug only
+        batch_output['id'] = batch[0]
         batch_output['label'], is_valid = lot_to_tol([self.model.match_label_from_text(text) for text in gold_text])
         assert sum(is_valid) == len(is_valid), 'Incorrect gold text generation'
         # assert 'Not Found' not in label

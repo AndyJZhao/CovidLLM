@@ -73,7 +73,7 @@ class InstructionDataset(Dataset):
             {"from": "gpt", "value": out_text},
         ]
 
-        return id, prompt_tree_list, in_text, out_text, demo, question, conversation
+        return int(id), prompt_tree_list, in_text, out_text, demo, question, conversation
 
     def collate(self, batch):
         # Key: field,  Value: The list of continuous sequence to encode

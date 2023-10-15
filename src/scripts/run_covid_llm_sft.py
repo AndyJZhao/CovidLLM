@@ -106,6 +106,8 @@ def train_covid_llm(cfg):
     pbar.close()
     # save at the end of the training
     agent.save_model(cfg.save_path, current_step, is_final=True)
+    data.df.to_csv(cfg.save_file)
+    logger.save_file_to_wandb(cfg.save_file, base_path=cfg.out_dir)
     # update final valid and test acc
     final_results = logger.lookup_metric_checkpoint_by_best_eval('val_acc', out_metrics=['val_acc', 'test_acc'])
     logger.wandb_summary_update(final_results, finish_wandb=True)

@@ -19,6 +19,7 @@ from utils.pkg.hf_utils import download_hf_ckpt_to_local
 import torch as th
 from torch.nn.utils import rnn
 from bidict import bidict
+import numpy as np
 
 IGNORE_INDEX = -100
 import time
@@ -213,7 +214,6 @@ class CovidLLM(nn.Module):
         fields_to_add = cfg.data.static_cols + cfg.data.dynamic_cols
         field_names = [cfg.tree_node_alias.get(f, f) for f in fields_to_add]
         field_tokens = sum([[f'<{f}>', f'</{f}>'] for f in field_names], [])
-        special_tokens = []
 
         special_tokens = []
         if cfg.get('add_class_token', True):
@@ -239,6 +239,8 @@ class CovidLLM(nn.Module):
         self.left_tokenizer.padding_side = 'left'
 
         # Data related
+        for col in ['dialog', 'confidence', 'pred']:
+            data.df[col] = np.nan
         for id, _ in data.label_info.iterrows():
             data.label_info.loc[id]['label_name'] = self.tokenizer.decode(self.tokenizer(_.label_name).input_ids[1:])
 
@@ -313,6 +315,13 @@ class CovidLLM(nn.Module):
         else:
             return f'Multiple labels matched {matched}', False
 
+    def get_choice_prob(self, batch_scores):
+        readout_pos = self.cfg.get('choice_readout_pos', 0)
+        batch_logits = batch_scores[readout_pos][:, self.choice_ids].softmax(-1).cpu().numpy()
+        batch_confidence = [dict(zip(self.cls_token_names, logits.tolist())) for logits in batch_logits]
+        batch_out_text = [self.cls_token_names[_.argmax(-1)] for _ in batch_logits]
+        return batch_confidence, batch_out_text
+
     def generate(self, inputs, choice_only=False):
         # ! Prepare input
         node_ids, prompt_tree_lol, conversation_list = inputs['batch']
@@ -326,7 +335,6 @@ class CovidLLM(nn.Module):
             # Remove Gold response
             _prompt = conv.get_prompt().strip(conv.sep2)
             batch_input_text.append(_prompt)
-        readout_pos = self.cfg.get('choice_readout_pos', 0)
 
         start_time = time.time()
         batch_input_ids, attention_mask = process_batch_instance_for_inference(
@@ -346,13 +354,9 @@ class CovidLLM(nn.Module):
                 use_cache=True,
                 return_dict_in_generate=choice_only,
             )
-        if choice_only:  # The answer is:
-            batch_preds = batch_output.scores[readout_pos][:, self.choice_ids].argmax(-1).cpu().tolist()
-            batch_out_text = [self.cls_token_names[_] for _ in batch_preds]
-        else:
-            batch_out_text = self.tokenizer.batch_decode(batch_output, skip_special_tokens=False)
+        batch_confidence, batch_out_text = self.get_choice_prob(batch_output.scores)
         outputs = {'dialog': [p + o for p, o in zip(batch_input_text, batch_out_text)],
-                   'generated_text': batch_out_text}
+                   'generated_text': batch_out_text, 'confidence': batch_confidence}
         if self.cfg.add_loop_inference:
             self.logger.info(f"BATCH inference time: {time.time() - start_time:.2f} seconds")
             input_id_list = self.tokenizer(batch_input_text).input_ids
@@ -374,17 +378,8 @@ class CovidLLM(nn.Module):
                     )
 
                 # Decode output tokens
-                if not choice_only:
-                    out_text = self.tokenizer.decode(output[0], skip_special_tokens=False)
-                    # out_text = out_text.strip().rstrip(stop_str).strip()
-                    loop_outputs.append(out_text)
-                else:
-                    # out_topk_choices = [self.tokenizer.convert_ids_to_tokens(s.topk(3).indices.squeeze())
-                    #                     for s in output.scores]
-                    # logger.debug(f"Gold {inputs['gold_text'][i]}. Generated: {out_topk_choices}")
-                    class_logits = output.scores[readout_pos].squeeze()[self.choice_ids]
-                    out_text = self.cls_token_names[class_logits.argmax().item()]
-                    loop_outputs.append(out_text)
+                batch_confidence, batch_out_text = self.get_choice_prob(batch_output.scores)
+                loop_outputs.append(batch_out_text)
             outputs['loop_generated_text'] = loop_outputs
             self.logger.info(f"LOOP inference time: {time.time() - start_time:.2f} seconds")
         return outputs

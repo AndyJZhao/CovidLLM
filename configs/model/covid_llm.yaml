@@ -81,7 +81,7 @@ use_flash_attn: false
 
 dropout: 0.5
 eval_choice_only: ${add_class_token}
-alias: ${llm.name}-${data.alias}-${target}
+alias: ${llm.name}-Split${data.split}-${data.alias}-${target}
 
 #
 add_class_token: true
