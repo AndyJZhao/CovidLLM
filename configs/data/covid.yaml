@@ -10,7 +10,7 @@ data:
   text:
     mode: label_name # How to generate text for each node?
   task_description: >-
-    You are an assistant that predicts epidemic trends. You are going to predict the ${target_description} from several choices: ${data.label_description}
+    You are an advanced assistant designed to forecast epidemic trends for a specific US state. Your task is to predict the ${target_description} from the available options: ${data.label_description}. You have been provided with the state's general information under <Static>, as well as time-sequenced data in <Dynamic>, where the most recent entry corresponds to the current week.
   label_description: '' # To be initialized afterward
   label_text: name
 

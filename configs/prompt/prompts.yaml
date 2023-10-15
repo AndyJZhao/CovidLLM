@@ -68,22 +68,6 @@ prompt_templates:
         {info}\n<question>What's the topic of academic paper?${data.label_description}</question>\n
         <answer>{answer}</answer>
   question:
-    cla_fstring: >-
-      {instruction}{demonstration}\n
-          Question: What's the topic of academic paper [{query_msg}]?${data.label_description}\n
-          Answer:
-    label_prop_xml: >-
-      {information}\n
-      <question>What's the topic of academic paper?${data.label_description}</question>\n
-      <answer>
-    label_prop_xml_cot: >-
-      {information}\n
-      <question>What's the topic of academic paper?${data.label_description}</question>\n
-      Generate your answer with <answer> </answer> around it. Let's think step by step and solve it with the message passing!
-    label_prop_xml_demo: >-
-      {information}\n
-      <question>What's the topic of the target academic paper with the neighborhood label information above?${data.label_description}</question>\n
-      <answer>{answer}</answer>
     sft: >-
       \n{info}\nBased on the given information above, your goal is to predict the ${target_description}. Remember, your answer should be in the form of the class label.\n
   gpt:
