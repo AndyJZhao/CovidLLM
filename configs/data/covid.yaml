@@ -36,7 +36,7 @@ data:
     ]
   dynamic_cols: [
     # @ Infection
-    'hospitalization_per_100k',
+    'hospitalization_per_100k', # Current Risk # TODO -> Risk
     'reported_cases_per_100k',
     'previous_infection_12w',
     # @ Vaccine

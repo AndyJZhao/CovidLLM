@@ -36,4 +36,10 @@ parameters:
   target:
     values:
       - r1 # Risk for the next week
+      - r2 # Trend for the next week
+      - r3 # Trend for the next week
+      - r4 # Trend for the next week
       - t1 # Trend for the next week
+      - t2 # Trend for the next week
+      - t3 # Trend for the next week
+      - t4 # Trend for the next week
