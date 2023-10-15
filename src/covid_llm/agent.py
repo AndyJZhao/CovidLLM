@@ -66,7 +66,7 @@ class Agent:
                 output = self.predict(eval_batch, self.cfg.eval_choice_only)
                 # Update dataframe to save
                 for col in ['dialog', 'confidence', 'pred']:
-                    self.data.df.iloc[list(eval_batch[0])][col] = output[col]
+                    self.data.df.loc[list(eval_batch[0]),col] = output[col]
                 for item, value in output.items():
                     eval_res[item].append(value)
             eval_res = {k: np.concatenate(v) if isinstance(v[0], Iterable) else np.array(v)
@@ -103,7 +103,6 @@ class Agent:
         }
         batch_output = self.model.generate(inputs, choice_only)
         # print(batch_output) # For debug only
-        batch_output['id'] = batch[0]
         batch_output['label'], is_valid = lot_to_tol([self.model.match_label_from_text(text) for text in gold_text])
         assert sum(is_valid) == len(is_valid), 'Incorrect gold text generation'
         # assert 'Not Found' not in label

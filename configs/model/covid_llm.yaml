@@ -32,6 +32,7 @@ demo:
 # @ Agent settings
 agent_name: DeepSpeedAgent
 local_rank: 0
+save_model: false
 save_path: ${out_dir}checkpoints/
 
 # @ Text Settings
