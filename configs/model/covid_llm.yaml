@@ -2,17 +2,28 @@
 model:
   name: CovidLLM
 
-# @ GraphText Settings
-#graph_construct: spd1.spd2
+# @ CovidLLM Settings
 in_weeks: 2
-#  title: 1stHopOnly
-nb_padding: false
-nb_order: true
-node_dropout: 0.5
-
 target: t1
 tree_node_alias:
   x: feature
+#encoder: RNN
+#encoder: LSTM
+encoder_type: GRU
+encoder:
+  _target_: torch.nn.${encoder_type}
+  input_size: 1
+  hidden_size: 32
+  num_layers: 2
+  dropout: 0.2
+
+cont_fields: all
+_cont_fields_lookup:
+  all: [ 'hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w',
+         'Dose1_Pop_Pct', 'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct' ]
+  infection: [ 'hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w' ]
+  vaccine: [ 'Dose1_Pop_Pct', 'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct' ]
+in_cont_fields: ${_cont_fields_lookup.${cont_fields}}
 
 # @ Demo for In-Context-Learning
 use_demo: true

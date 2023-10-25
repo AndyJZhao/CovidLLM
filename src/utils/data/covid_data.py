@@ -55,6 +55,7 @@ class CovidData:
         self.prompt = hydra.utils.instantiate(cfg.prompt)
         uf.logger.info(self.prompt.human)
 
+        self.in_cont_fields = cfg.in_cont_fields
         # ! Initialize Sequential Data
         if cfg.in_weeks > 1:
             for col in tqdm(cfg.data.dynamic_cols, 'Processing sequential data'):

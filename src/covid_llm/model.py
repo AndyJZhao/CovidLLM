@@ -20,7 +20,7 @@ import torch as th
 from torch.nn.utils import rnn
 from bidict import bidict
 import numpy as np
-
+import hydra
 IGNORE_INDEX = -100
 import time
 
@@ -211,9 +211,10 @@ class CovidLLM(nn.Module):
             self.llm = LlamaForCausalLM.from_pretrained(cfg.llm.local_dir)
         self.llm.config.use_cache = False
         self.cls_token_names = class_tokens = [r.label_token for i, r in data.label_info.iterrows()]
+        field_tokens = [f'<{f} emb>' for f in data.in_cont_fields]
         fields_to_add = cfg.data.static_cols + cfg.data.dynamic_cols
         field_names = [cfg.tree_node_alias.get(f, f) for f in fields_to_add]
-        field_tokens = sum([[f'<{f}>', f'</{f}>'] for f in field_names], [])
+        field_tokens += sum([[f'<{f}>', f'</{f}>'] for f in field_names], [])
 
         special_tokens = []
         if cfg.get('add_class_token', True):
@@ -260,7 +261,14 @@ class CovidLLM(nn.Module):
             )
             self.llm = get_peft_model(self.llm, peft_config)
             self.llm.print_trainable_parameters()
-        logger.info('LLAMA proj initialized.')
+
+        # Graph Encoder
+
+        self.encoder = nn.ModuleDict()  # Token Encoder
+        for f in data.in_cont_fields:
+            self.encoder[f] =  hydra.utils.instantiate(cfg.encoder)
+
+        logger.info('Sequence encoders initialized.')
 
         if cfg.frozen_llm:
             for name, param in self.llm.named_parameters():
