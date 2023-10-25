@@ -1,0 +1,39 @@
+You are an advanced assistant designed to forecast epidemic trends for a specific US state. Your task is to predict the risk of hospitalization for the next week from the available options: [HIGHRISK: HighRisk, MEDIUMRISK: MediumRisk, LOWRISK: LowRisk]. You have been provided with the state's general information under <Static>, as well as time-sequenced data in <Dynamic>, where the most recent entry corresponds to the current week.
+
+<information>
+	<Static>
+		<Black>0.33</Black>
+		<Healthcare_Access_and_Quality_Index>85.5</Healthcare_Access_and_Quality_Index>
+		<Older_at_high_risk>0.51</Older_at_high_risk>
+		<Population>10617423</Population>
+		<White>0.6</White>
+		<adults_at_high_risk>0.36</adults_at_high_risk>
+		<dem_percent>0.5</dem_percent>
+		<health_care_spending>66.0</health_care_spending>
+		<healthcare_utilization>0.178</healthcare_utilization>
+		<medicaid_coverage>0.173</medicaid_coverage>
+		<medicaid_spending>10.9</medicaid_spending>
+		<medicare_coverage>0.126</medicare_coverage>
+		<medicare_spending_by_residence>10.0</medicare_spending_by_residence>
+		<over_65>0.14</over_65>
+		<poor_health_status>0.2</poor_health_status>
+		<poverty_rate>0.134</poverty_rate>
+		<private_health_insurance_spending>26.0</private_health_insurance_spending>
+		<rep_percent>0.49</rep_percent>
+		<social_vulnerability_index>0.57</social_vulnerability_index>
+		<state_name>Georgia</state_name>
+		<under_20>0.26</under_20>
+		<uninsured_percent>0.134</uninsured_percent>
+	</Static>
+	<Dynamic>
+		<Additional_Doses_Vax_Pct>[0.0, 0.0]</Additional_Doses_Vax_Pct>
+		<C4M_Restrictions_on_gatherings>['no restrictions', 'no restrictions']</C4M_Restrictions_on_gatherings>
+		<C6M_Stay_at_home_requirements>['recommend not leaving house', 'recommend not leaving house']</C6M_Stay_at_home_requirements>
+		<Dose1_Pop_Pct>[0.0, 0.0]</Dose1_Pop_Pct>
+		<Series_Complete_Pop_Pct>[0.0, 0.0]</Series_Complete_Pop_Pct>
+		<hospitalization_per_100k>[54.9, 58.1]</hospitalization_per_100k>
+		<previous_infection_12w>[3.5, 3.8]</previous_infection_12w>
+		<reported_cases_per_100k>[547.0, 472.7]</reported_cases_per_100k>
+	</Dynamic>
+</information>
+Based on the given information above, your goal is to predict the risk of hospitalization for the next week. Remember, your answer should be in the form of the class label.
