@@ -16,55 +16,8 @@ from utils.basics import logger
 import numpy as np
 from functools import partial
 
-
-def get_stratified_subset_split(labels, label_subset, valid_ids, n_split_samples):
-    # Subset stratified split from all labels
-    # valid_ids: available ids
-    ids_left = valid_ids
-    split_ids = {}
-    for split, n_samples in n_split_samples.items():
-        if n_samples > 0:
-            split_ids[split] = np.random.permutation(
-                np.concatenate([ids_left[np.where(labels[ids_left] == l)[0][:n_samples]]
-                                for l in label_subset
-                                ]
-                               )
-            )
-            ids_left = np.setdiff1d(ids_left, split_ids[split])
-        else:
-            split_ids[split] = []
-    return split_ids
-
-
-def generate_few_shot_split(n_labels, g, split_ids, n_demo_per_class):
-    demo_ids = []
-    labels = th.tensor(g.ndata['label'])  # assuming the label is stored in graph ndata
-
-    for l in np.arange(n_labels):
-        label_nodes = split_ids['train'][np.where(labels[split_ids['train']] == l)[0]]
-        demo_id = label_nodes[th.argsort(g.out_degrees(label_nodes))[-n_demo_per_class:]]
-        demo_id = demo_id.reshape(-1).tolist()
-        demo_ids.extend(demo_id)
-
-    all_ids = np.concatenate([split_ids['train'], split_ids['val'], split_ids['test']])
-    remaining_ids = list(set(all_ids) - set(demo_ids))
-    remaining_labels = labels[remaining_ids]
-
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=0)
-    try:
-        for val_index, test_index in sss.split(remaining_ids, remaining_labels):
-            new_val_ids = np.array(remaining_ids)[val_index]
-            new_test_ids = np.array(remaining_ids)[test_index]
-    except:  # If failed, use random split
-        permuted = np.random.permutation(remaining_ids)
-        new_val_ids, new_test_ids = permuted[:len(permuted) // 2], permuted[len(permuted) // 2:]
-    new_split_ids = {
-        'train': np.array(demo_ids),
-        'val': new_val_ids,
-        'test': new_test_ids
-    }
-
-    return new_split_ids
+CONTINUOUS_COLS = ['hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w', 'Dose1_Pop_Pct',
+                   'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct']
 
 
 class CovidData:
@@ -109,7 +62,8 @@ class CovidData:
         return
 
     def process_seq_col(self, r, col):
-        week_row_ids = {i: np.where(self.df.uid == f'{r.state_name}-W{max(r.week_id - i, 0)}')[0][0] for i in range(self.cfg.in_weeks)}
+        week_row_ids = {i: np.where(self.df.uid == f'{r.state_name}-W{max(r.week_id - i, 0)}')[0][0] for i in
+                        range(self.cfg.in_weeks)}
         seq = [self.df.iloc[i][col] for _, i in week_row_ids.items()]
         assert len(seq) >= 1
         return seq
