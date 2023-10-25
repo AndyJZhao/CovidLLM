@@ -1,4 +1,4 @@
-# sw sweep/V0-SFT/0.0-RoughSearch.sweep
+# sw sweep/V0-SFT/0.1-Split-Seq.sweep
 command:
   - ${interpreter}
   - sweep/scripts/hydra_sweep_launcher.py

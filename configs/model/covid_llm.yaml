@@ -11,7 +11,8 @@ nb_order: true
 node_dropout: 0.5
 
 target: t1
-
+tree_node_alias:
+  x: feature
 
 # @ Demo for In-Context-Learning
 use_demo: true

@@ -8,8 +8,6 @@ data:
 use_demo: false
 wandb_proj: CovidLLM-SFT
 
-
-
 human_prompt: base
 gpt_prompt: base
 instruct_prompt: sft
