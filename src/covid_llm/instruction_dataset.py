@@ -79,4 +79,4 @@ class InstructionDataset(Dataset):
         # Key: field,  Value: The list of continuous sequence to encode
         node_ids, prompt_tree_lol, in_text_list, out_text_list, demo_list, question_list, conversation_list = zip(
             *batch)
-        return node_ids, prompt_tree_lol, conversation_list
+        return list(node_ids), prompt_tree_lol, conversation_list

@@ -21,26 +21,9 @@ from torch.nn.utils import rnn
 from bidict import bidict
 import numpy as np
 import hydra
+
 IGNORE_INDEX = -100
 import time
-
-
-def find_consecutive_subarrays(arr):
-    if not arr:
-        return []
-
-    subarrays = []
-    current_subarray = [arr[0]]
-
-    for i in range(1, len(arr)):
-        if arr[i] == arr[i - 1] + 1:
-            current_subarray.append(arr[i])
-        else:
-            subarrays.append(current_subarray)
-            current_subarray = [arr[i]]
-
-    subarrays.append(current_subarray)
-    return subarrays
 
 
 def smart_tokenizer_and_embedding_resize(
@@ -63,30 +46,6 @@ def smart_tokenizer_and_embedding_resize(
             output_embeddings = model.get_output_embeddings().weight.data
             output_embeddings_avg = output_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
             output_embeddings[-num_new_tokens:] = output_embeddings_avg
-
-
-class KeywordsStoppingCriteria(StoppingCriteria):
-    def __init__(self, keywords, tokenizer, input_ids):
-        self.keywords = keywords
-        self.keyword_ids = [tokenizer(keyword).input_ids for keyword in keywords]
-        self.keyword_ids = [keyword_id[0] for keyword_id in self.keyword_ids if
-                            type(keyword_id) is list and len(keyword_id) == 1]
-        self.tokenizer = tokenizer
-        self.start_len = None
-        self.input_ids = input_ids
-
-    def __call__(self, output_ids: th.LongTensor, scores: th.FloatTensor, **kwargs) -> bool:
-        if self.start_len is None:
-            self.start_len = self.input_ids.shape[1]
-        else:
-            for keyword_id in self.keyword_ids:
-                if output_ids[0, -1] == keyword_id:
-                    return True
-            outputs = self.tokenizer.batch_decode(output_ids[:, self.start_len:], skip_special_tokens=True)[0]
-            for keyword in self.keywords:
-                if keyword in outputs:
-                    return True
-        return False
 
 
 def build_one_instance_supervised(tokenizer, sources, conv_template):
@@ -183,6 +142,7 @@ class CovidLLM(nn.Module):
         super(CovidLLM, self).__init__()
         self.cfg = cfg
         self.data = data
+        self.df = data.df
         self.logger = logger
         self.device = th.cuda.current_device() if th.cuda.is_available() else th.device('cpu')
 
@@ -192,6 +152,7 @@ class CovidLLM(nn.Module):
             self.float_type = th.float32
         if self.cfg.ds.fp16.enabled:
             self.float_type = th.float16
+
         self.conv_template = conversation_lib.conv_templates[cfg.conv_template]
         max_tgt_len = cfg['max_tgt_len']
         self.gpt_response_prompt = data.prompt.gpt.template.split('{answer}')[0]
@@ -262,12 +223,15 @@ class CovidLLM(nn.Module):
             self.llm = get_peft_model(self.llm, peft_config)
             self.llm.print_trainable_parameters()
 
-        # Graph Encoder
+        # Sequence Encoder
 
-        self.encoder = nn.ModuleDict()  # Token Encoder
-        for f in data.in_cont_fields:
-            self.encoder[f] =  hydra.utils.instantiate(cfg.encoder)
+        self.encoder = nn.ModuleDict({
+            f.upper(): hydra.utils.instantiate(cfg.encoder)
+            for f in data.in_cont_fields})  # Token Encoder
 
+        # ! Process continuous data to sequential form: [N, in_weeks, 1]
+        self.cont_feat = {f.upper(): th.from_numpy(np.array(data.df[f].to_list())).to(self.float_type).unsqueeze(-1)
+                          for f in data.in_cont_fields}
         logger.info('Sequence encoders initialized.')
 
         if cfg.frozen_llm:
@@ -293,14 +257,83 @@ class CovidLLM(nn.Module):
                 input_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
         return inputs_embeds
 
+    def build_continuous_fields(self, token_ids, cont_fields, graph_tree_list):
+        def find_consecutive_subarrays(arr):
+            if not arr:
+                return []
+
+            subarrays = []
+            current_subarray = [arr[0]]
+
+            for i in range(1, len(arr)):
+                if arr[i] == arr[i - 1] + 1:
+                    current_subarray.append(arr[i])
+                else:
+                    subarrays.append(current_subarray)
+                    current_subarray = [arr[i]]
+
+            subarrays.append(current_subarray)
+            return subarrays
+
+        # build up continuous field information, e.g. <x_emb>, <a2x_emb>
+        # Returns cont_fields: List of tuple of (field, text_position, encode_ids)
+        encode_df = pd.concat([tree.encode_df for tree in graph_tree_list]).reset_index()
+        field_tokens = self.tokenizer.convert_tokens_to_ids([f'<{f} emb>' for f in cont_fields])
+        cont_text_locations = th.where(th.isin(token_ids.cpu(), th.tensor(field_tokens)))[0].numpy()
+        cont_fields_positions = find_consecutive_subarrays(cont_text_locations.tolist())
+        assert len(encode_df) == len(cont_fields_positions), 'Error in processing continuous feature.'
+
+        cont_fields = []  # Field, text_pos, encdoe_ids
+        for i, text_position in enumerate(cont_fields_positions):
+            f = encode_df.iloc[i].attr_type
+            encode_nodes = encode_df.iloc[i].nodes
+            assert len(text_position) == len(encode_nodes), 'Error in processing continuous feature.'
+            start, end = text_position[0], text_position[-1] + 1
+            cont_fields.append((f, range(start, end)))
+
+        return cont_fields
+
+    def prompt_wrap(self, seq_emb, node_ids, graph_tree_lol, input_tok_ids):
+        input_tok_ids = input_tok_ids.to(self.device)  # bsz x s2
+        batch_size = input_tok_ids.shape[0]
+        # Lookup text embeddings
+        if self.llm.base_model.__class__.__name__ == 'LlamaModel':
+            inputs_embeds = self.llm.model.embed_tokens(
+                input_tok_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
+        else:
+            inputs_embeds = self.llm.model.model.embed_tokens(
+                input_tok_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
+        if seq_emb is not None:
+            # Construct graph embeddings to override text embeddings
+            new_input_embeds = []
+            for node_id, graph_tree_list, cur_input_ids, _cur_input_embeds in zip(
+                    node_ids, graph_tree_lol, input_tok_ids, inputs_embeds):
+                cur_input_embeds = _cur_input_embeds.clone()  # Clone the old embedding
+                continuous_fields = self.build_continuous_fields(cur_input_ids, seq_emb.keys(), graph_tree_list)
+                for field, text_pos, encdoe_ids in continuous_fields:
+                    # lookup batch encoded node embeddings
+                    g_emb = seq_emb[field][encdoe_ids]
+                    cur_input_embeds[text_pos] = g_emb
+                new_input_embeds.append(cur_input_embeds)
+            inputs_embeds = th.stack(new_input_embeds, dim=0)
+        return inputs_embeds
+
     def forward(self, inputs):
         node_ids, prompt_tree_lol, conversation_list = inputs
         # ! Get Graph Language
         # ! Tokenization: batch instance to input and target IDs.
+        if self.encoder is not None:
+            seq_emb = {  # Last sequence embedding
+                f: encoder(self.cont_feat[f][node_ids].to(self.device))[0][:, -1, :].squeeze()
+                for f, encoder in self.encoder.items()
+            }  # [ batch_size , llm_hidden_dim ]
+        else:
+            seq_emb = None
         input_ids, target_ids, attention_mask = process_batch_instance(self.tokenizer, conversation_list,
                                                                        self.max_tgt_len, self.conv_template,
                                                                        self.device)
-        inputs_embeds = self.get_input_embeddings(input_ids)
+        inputs_embeds = self.prompt_wrap(seq_emb, node_ids, prompt_tree_lol, input_ids)
+
         outputs = self.llm(
             inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,
