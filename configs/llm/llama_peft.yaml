@@ -9,7 +9,7 @@ llm:
   name: LLaMA-PEFT
   base_model: llama2-7b-chat
   hf_name: ${._meta_data.hf_name}
-  hidden_dim: 4096
+  hidden_dim: ${oc.select:._meta_data.hidden_dim,4096}
 
 # Train Config
 max_length: 1024

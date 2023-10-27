@@ -172,7 +172,7 @@ class CovidLLM(nn.Module):
             self.llm = LlamaForCausalLM.from_pretrained(cfg.llm.local_dir)
         self.llm.config.use_cache = False
         self.cls_token_names = class_tokens = [r.label_token for i, r in data.label_info.iterrows()]
-        field_tokens = [f'<{f} emb>' for f in data.in_cont_fields]
+        field_tokens = [f'<{f.upper()}-EMB>' for f in data.in_cont_fields]
         fields_to_add = cfg.data.static_cols + cfg.data.dynamic_cols
         field_names = [cfg.tree_node_alias.get(f, f) for f in fields_to_add]
         field_tokens += sum([[f'<{f}>', f'</{f}>'] for f in field_names], [])
@@ -257,7 +257,7 @@ class CovidLLM(nn.Module):
                 input_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
         return inputs_embeds
 
-    def build_continuous_fields(self, token_ids, cont_fields, graph_tree_list):
+    def build_continuous_fields(self, token_ids, cont_fields):
         def find_consecutive_subarrays(arr):
             if not arr:
                 return []
@@ -277,17 +277,13 @@ class CovidLLM(nn.Module):
 
         # build up continuous field information, e.g. <x_emb>, <a2x_emb>
         # Returns cont_fields: List of tuple of (field, text_position, encode_ids)
-        encode_df = pd.concat([tree.encode_df for tree in graph_tree_list]).reset_index()
-        field_tokens = self.tokenizer.convert_tokens_to_ids([f'<{f} emb>' for f in cont_fields])
+        field_tokens = self.tokenizer.convert_tokens_to_ids([f'<{f.upper()}-EMB>' for f in cont_fields])
         cont_text_locations = th.where(th.isin(token_ids.cpu(), th.tensor(field_tokens)))[0].numpy()
         cont_fields_positions = find_consecutive_subarrays(cont_text_locations.tolist())
-        assert len(encode_df) == len(cont_fields_positions), 'Error in processing continuous feature.'
 
         cont_fields = []  # Field, text_pos, encdoe_ids
         for i, text_position in enumerate(cont_fields_positions):
-            f = encode_df.iloc[i].attr_type
-            encode_nodes = encode_df.iloc[i].nodes
-            assert len(text_position) == len(encode_nodes), 'Error in processing continuous feature.'
+            f = self.tokenizer.decode(token_ids[text_position[0]]).lstrip('<').rstrip('-EMB>')
             start, end = text_position[0], text_position[-1] + 1
             cont_fields.append((f, range(start, end)))
 
@@ -306,14 +302,13 @@ class CovidLLM(nn.Module):
         if seq_emb is not None:
             # Construct graph embeddings to override text embeddings
             new_input_embeds = []
-            for node_id, graph_tree_list, cur_input_ids, _cur_input_embeds in zip(
-                    node_ids, graph_tree_lol, input_tok_ids, inputs_embeds):
+            for i, (node_id, graph_tree_list, cur_input_ids, _cur_input_embeds) in enumerate(
+                    zip(node_ids, graph_tree_lol, input_tok_ids, inputs_embeds)):
                 cur_input_embeds = _cur_input_embeds.clone()  # Clone the old embedding
-                continuous_fields = self.build_continuous_fields(cur_input_ids, seq_emb.keys(), graph_tree_list)
-                for field, text_pos, encdoe_ids in continuous_fields:
+                continuous_fields = self.build_continuous_fields(cur_input_ids, self.data.in_cont_fields)
+                for field, text_pos in continuous_fields:
                     # lookup batch encoded node embeddings
-                    g_emb = seq_emb[field][encdoe_ids]
-                    cur_input_embeds[text_pos] = g_emb
+                    cur_input_embeds[text_pos] = seq_emb[field][i]
                 new_input_embeds.append(cur_input_embeds)
             inputs_embeds = th.stack(new_input_embeds, dim=0)
         return inputs_embeds

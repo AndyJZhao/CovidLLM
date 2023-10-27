@@ -15,7 +15,7 @@ class PromptTree:
         })
         if cfg.use_seq_encoder:
             for cont_field in cfg.in_cont_fields:
-                self.info_dict['Dynamic'][cont_field] = f'{cont_field.upper()}-EMB'
+                self.info_dict['Dynamic'][cont_field] = f'<{cont_field.upper()}-EMB>'
         self.style = style
         self.hierarchy = hierarchy
         self.label = label
