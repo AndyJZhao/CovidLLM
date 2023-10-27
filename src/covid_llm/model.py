@@ -289,7 +289,7 @@ class CovidLLM(nn.Module):
 
         return cont_fields
 
-    def prompt_wrap(self, seq_emb, node_ids, graph_tree_lol, input_tok_ids):
+    def prompt_wrap(self, seq_emb, node_ids, input_tok_ids):
         input_tok_ids = input_tok_ids.to(self.device)  # bsz x s2
         batch_size = input_tok_ids.shape[0]
         # Lookup text embeddings
@@ -299,11 +299,11 @@ class CovidLLM(nn.Module):
         else:
             inputs_embeds = self.llm.model.model.embed_tokens(
                 input_tok_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
-        if seq_emb is not None:
+        if seq_emb is not None: # Seq Embedding: [batch_size, llm_hidden_dim]
             # Construct graph embeddings to override text embeddings
             new_input_embeds = []
-            for i, (node_id, graph_tree_list, cur_input_ids, _cur_input_embeds) in enumerate(
-                    zip(node_ids, graph_tree_lol, input_tok_ids, inputs_embeds)):
+            for i, (node_id, cur_input_ids, _cur_input_embeds) in enumerate(
+                    zip(node_ids, input_tok_ids, inputs_embeds)):
                 cur_input_embeds = _cur_input_embeds.clone()  # Clone the old embedding
                 continuous_fields = self.build_continuous_fields(cur_input_ids, self.data.in_cont_fields)
                 for field, text_pos in continuous_fields:
@@ -327,7 +327,7 @@ class CovidLLM(nn.Module):
         input_ids, target_ids, attention_mask = process_batch_instance(self.tokenizer, conversation_list,
                                                                        self.max_tgt_len, self.conv_template,
                                                                        self.device)
-        inputs_embeds = self.prompt_wrap(seq_emb, node_ids, prompt_tree_lol, input_ids)
+        inputs_embeds = self.prompt_wrap(seq_emb, node_ids, input_ids)
 
         outputs = self.llm(
             inputs_embeds=inputs_embeds,
@@ -372,10 +372,18 @@ class CovidLLM(nn.Module):
             _prompt = conv.get_prompt().strip(conv.sep2)
             batch_input_text.append(_prompt)
 
+        if self.encoder is not None:
+            seq_emb = {  # Last sequence embedding
+                f: encoder(self.cont_feat[f][node_ids].to(self.device))[0][:, -1, :].squeeze()
+                for f, encoder in self.encoder.items()
+            }  # [ batch_size , llm_hidden_dim ]
+        else:
+            seq_emb = None
+
         start_time = time.time()
         batch_input_ids, attention_mask = process_batch_instance_for_inference(
             self.left_tokenizer, batch_input_text, self.device)
-        batch_inputs_embeds = self.get_input_embeddings(batch_input_ids)
+        batch_inputs_embeds = self.prompt_wrap(seq_emb, node_ids, batch_input_ids)
         attention_mask = attention_mask.to(self.device)
         # Mask embedding attn_mask=0 to zeros
         masked_batch_embedding = batch_inputs_embeds * attention_mask.unsqueeze(-1).to(batch_inputs_embeds.dtype)
