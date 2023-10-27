@@ -9,6 +9,7 @@ tree_node_alias:
   x: feature
 #encoder: RNN
 #encoder: LSTM
+use_seq_encoder: true
 encoder_type: GRU
 encoder:
   _target_: torch.nn.${encoder_type}
@@ -19,7 +20,7 @@ encoder:
 
 cont_fields: all
 _cont_fields_lookup:
-  all: [ 'hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w',
+  all: [ 'hospitalization_per_100k', 'reported_cases_per_100k', # 'previous_infection_12w', 关键信息都是前两个
          'Dose1_Pop_Pct', 'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct' ]
   infection: [ 'hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w' ]
   vaccine: [ 'Dose1_Pop_Pct', 'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct' ]

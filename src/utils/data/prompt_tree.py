@@ -13,7 +13,9 @@ class PromptTree:
             'Static': data[id][cfg.data.static_cols].T.squeeze().to_dict(),
             'Dynamic': data[id][cfg.data.dynamic_cols].T.squeeze().to_dict(),
         })
-
+        if cfg.use_seq_encoder:
+            for cont_field in cfg.in_cont_fields:
+                self.info_dict['Dynamic'][cont_field] = f'{cont_field.upper()}-EMB'
         self.style = style
         self.hierarchy = hierarchy
         self.label = label
