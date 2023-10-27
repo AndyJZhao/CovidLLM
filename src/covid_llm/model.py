@@ -224,7 +224,7 @@ class CovidLLM(nn.Module):
             self.llm.print_trainable_parameters()
 
         # Sequence Encoder
-
+        self.hidden_dim = cfg.llm.hidden_dim
         self.encoder = nn.ModuleDict({
             f.upper(): hydra.utils.instantiate(cfg.encoder)
             for f in data.in_cont_fields})  # Token Encoder
@@ -299,7 +299,7 @@ class CovidLLM(nn.Module):
         else:
             inputs_embeds = self.llm.model.model.embed_tokens(
                 input_tok_ids).expand(batch_size, -1, -1)  # bsz x s2 x embed_dim
-        if seq_emb is not None: # Seq Embedding: [batch_size, llm_hidden_dim]
+        if seq_emb is not None:  # Seq Embedding: [batch_size, llm_hidden_dim]
             # Construct graph embeddings to override text embeddings
             new_input_embeds = []
             for i, (node_id, cur_input_ids, _cur_input_embeds) in enumerate(
@@ -313,17 +313,23 @@ class CovidLLM(nn.Module):
             inputs_embeds = th.stack(new_input_embeds, dim=0)
         return inputs_embeds
 
-    def forward(self, inputs):
-        node_ids, prompt_tree_lol, conversation_list = inputs
-        # ! Get Graph Language
-        # ! Tokenization: batch instance to input and target IDs.
+    def encode_sequence(self, node_ids):
+        bsz = len(node_ids)
         if self.encoder is not None:
-            seq_emb = {  # Last sequence embedding
-                f: encoder(self.cont_feat[f][node_ids].to(self.device))[0][:, -1, :].squeeze()
+            seq_emb = {  # Last sequence embedding of [bsz, seq_len, llm_hidden_dim]
+                f: encoder(self.cont_feat[f][node_ids].to(self.device))[0].view(bsz, -1, self.hidden_dim)[:, -1,
+                   :].squeeze()
                 for f, encoder in self.encoder.items()
             }  # [ batch_size , llm_hidden_dim ]
         else:
             seq_emb = None
+        return seq_emb
+
+    def forward(self, inputs):
+        node_ids, prompt_tree_lol, conversation_list = inputs
+        # ! Get Graph Language
+        # ! Tokenization: batch instance to input and target IDs.
+        seq_emb = self.encode_sequence(node_ids)
         input_ids, target_ids, attention_mask = process_batch_instance(self.tokenizer, conversation_list,
                                                                        self.max_tgt_len, self.conv_template,
                                                                        self.device)
@@ -372,13 +378,7 @@ class CovidLLM(nn.Module):
             _prompt = conv.get_prompt().strip(conv.sep2)
             batch_input_text.append(_prompt)
 
-        if self.encoder is not None:
-            seq_emb = {  # Last sequence embedding
-                f: encoder(self.cont_feat[f][node_ids].to(self.device))[0][:, -1, :].squeeze()
-                for f, encoder in self.encoder.items()
-            }  # [ batch_size , llm_hidden_dim ]
-        else:
-            seq_emb = None
+        seq_emb = self.encode_sequence(node_ids)
 
         start_time = time.time()
         batch_input_ids, attention_mask = process_batch_instance_for_inference(
