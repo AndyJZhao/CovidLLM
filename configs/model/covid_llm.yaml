@@ -14,9 +14,9 @@ encoder_type: GRU
 encoder:
   _target_: torch.nn.${encoder_type}
   input_size: 1
-  hidden_size: ${llm.hidden_dim}
+  hidden_size: 32
   num_layers: 2
-  dropout: 0.2
+  dropout: ${dropout}
   batch_first: true
   bidirectional: false
 
