@@ -26,84 +26,6 @@ IGNORE_INDEX = -100
 import time
 
 
-class SeqEncoder(nn.Module):
-    def __init__(self, cfg):
-        super(SeqEncoder, self).__init__()
-        self.hidden_dim = cfg.encoder.hidden_size
-        self.seq_encoder = hydra.utils.instantiate(cfg.encoder)
-        self.linear_proj = MLP(cfg.encoder.hidden_size, cfg.llm.hidden_dim, n_layers=1, dropout=cfg.dropout)
-
-    def forward(self, x):
-        bsz = x.shape[0]
-        x = self.seq_encoder(x)[0]
-        x = x.view(bsz, -1, self.hidden_dim)[:, -1, :].squeeze()
-        return self.linear_proj(x)
-
-
-class MLP(nn.Module):
-    """ An MLP Encoder with input/output dropout and input/output norm
-    Since the output layer of projection layers is the input space of LLM, we need to add input and output layers norm
-    and dropout too.
-    """
-
-    def __init__(self, in_dim, out_dim, n_layers=1, hidden_dim=None, dropout=0.3, norm='LN',
-                 input_norm=True, output_norm=True, input_dropout=True, output_dropout=True, **kwargs):
-        super(MLP, self).__init__()
-
-        self.in_dim = in_dim
-        self.out_dim = out_dim
-
-        norm_layer = nn.BatchNorm1d if norm == 'BN' else nn.LayerNorm
-
-        # Input normalization and dropout
-        if input_norm:
-            self.input_norm = norm_layer(in_dim)
-        if input_dropout:
-            self.input_dropout = nn.Dropout(dropout)
-
-        # Initialize layers
-        self.layers = nn.ModuleList()
-        if n_layers > 1:
-            self.layers.append(nn.Linear(in_dim, hidden_dim))
-            for _ in range(n_layers - 2):
-                self.layers.append(nn.Linear(hidden_dim, hidden_dim))
-            self.layers.append(nn.Linear(hidden_dim, out_dim))
-        else:  # Just a single layer from input to output (acts like LinearEncoder)
-            self.layers.append(nn.Linear(in_dim, out_dim))
-
-        # Output normalization and dropout
-        if output_norm:
-            self.output_norm = norm_layer(out_dim)
-        if output_dropout:
-            self.output_dropout = nn.Dropout(dropout)
-
-        # Activation function
-        self.relu = nn.ReLU()
-
-    def forward(self, input):
-        # Input normalization and dropout
-        if hasattr(self, 'input_norm'):
-            input = self.input_norm(input)
-        if hasattr(self, 'input_dropout'):
-            input = self.input_dropout(input)
-
-        # Hidden layers
-        for i, layer in enumerate(self.layers[:-1]):
-            input = layer(input)
-            input = self.relu(input)
-
-        # Output layer (no activation)
-        output = self.layers[-1](input)
-
-        # Output normalization and dropout
-        if hasattr(self, 'output_norm'):
-            output = self.output_norm(output)
-        if hasattr(self, 'output_dropout'):
-            output = self.output_dropout(output)
-
-        return output
-
-
 def smart_tokenizer_and_embedding_resize(
         special_tokens_dict: Dict,
         tokenizer: transformers.PreTrainedTokenizer,
@@ -303,7 +225,9 @@ class CovidLLM(nn.Module):
 
         # Sequence Encoder
         self.hidden_dim = cfg.llm.hidden_dim
-        self.encoder = nn.ModuleDict({f.upper(): SeqEncoder(cfg) for f in data.in_cont_fields})
+        self.encoder = nn.ModuleDict({
+            f.upper(): hydra.utils.instantiate(cfg.encoder)
+            for f in data.in_cont_fields})  # Token Encoder
 
         # ! Process continuous data to sequential form: [N, in_weeks, 1]
         self.cont_feat = {f.upper(): th.from_numpy(np.array(data.df[f].to_list())).to(self.float_type).unsqueeze(-1)
@@ -390,9 +314,11 @@ class CovidLLM(nn.Module):
         return inputs_embeds
 
     def encode_sequence(self, node_ids):
+        bsz = len(node_ids)
         if self.encoder is not None:
             seq_emb = {  # Last sequence embedding of [bsz, seq_len, llm_hidden_dim]
-                f: encoder(self.cont_feat[f][node_ids].to(self.device))
+                f: encoder(self.cont_feat[f][node_ids].to(self.device))[0].view(bsz, -1, self.hidden_dim)[:, -1,
+                   :].squeeze()
                 for f, encoder in self.encoder.items()
             }  # [ batch_size , llm_hidden_dim ]
         else:

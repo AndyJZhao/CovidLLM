@@ -10,7 +10,7 @@ method: grid # Bayesian
 metric:
   goal: maximize
   name: val_acc
-name: 2.1-SeqEnc+LinearProj-RoughSearch
+name: 2.2-NoLinearProj-RoughSearch
 parameters:
   # ! Common Exp Settings
   total_steps:
@@ -27,6 +27,10 @@ parameters:
       - 4
 #      - 16
 #      - 32
+  dropout:
+    values:
+      - 0.2
+      - 0.5
   lr:
     values:
       - 2e-5
