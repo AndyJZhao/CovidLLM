@@ -36,6 +36,8 @@ data:
       'dem_percent', 'rep_percent',# 'other_percent'
     ]
   dynamic_cols: [
+    # @ Change of Hospitalization
+    'Change',
     # @ Infection
     'hospitalization_per_100k', # Current Risk # TODO -> Risk
     'reported_cases_per_100k',

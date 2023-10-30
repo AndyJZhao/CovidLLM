@@ -283,7 +283,7 @@ class CovidLLM(nn.Module):
 
         cont_fields = []  # Field, text_pos, encdoe_ids
         for i, text_position in enumerate(cont_fields_positions):
-            f = self.tokenizer.decode(token_ids[text_position[0]]).lstrip('<').rstrip('-EMB>')
+            f = self.tokenizer.decode(token_ids[text_position[0]]).split('<')[1].split('-EMB>')[0]
             start, end = text_position[0], text_position[-1] + 1
             cont_fields.append((f, range(start, end)))
 
