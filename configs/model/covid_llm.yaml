@@ -58,7 +58,8 @@ remove_quotation: true
 # @ LLM
 # LoRA
 lora:
-  r: 16
+  r: 16 # LoRA will be turned off if r<0
+
   alpha: ${.r}
   dropout: 0.1
   target_modules: [ q_proj, v_proj, k_proj, o_proj ]
