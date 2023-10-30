@@ -39,7 +39,7 @@ data:
     # @ Change of Hospitalization
     'Change',
     # @ Infection
-    'hospitalization_per_100k', # Current Risk # TODO -> Risk
+    'hospitalization_per_100k', # Current Risk
     'reported_cases_per_100k',
     'previous_infection_12w',
     # @ Vaccine

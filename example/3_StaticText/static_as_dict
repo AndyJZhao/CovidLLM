@@ -1,0 +1,40 @@
+# 524 tokens for the first batch
+You are an assistant that forecasts trend of infection for the next week for a US state based on the state information below:
+
+<information>
+	<Additional_Doses_Vax_Pct>[0.0, 0.0, 0.0]</Additional_Doses_Vax_Pct>
+	<C4M_Restrictions_on_gatherings>['no restrictions', 'no restrictions', 'no restrictions']</C4M_Restrictions_on_gatherings>
+	<C6M_Stay_at_home_requirements>['no measures', 'no measures', 'no measures']</C6M_Stay_at_home_requirements>
+	<Change><CHANGE-EMB></Change>
+	<Dose1_Pop_Pct>[52.53, 52.14, 51.76]</Dose1_Pop_Pct>
+	<Series_Complete_Pop_Pct>[49.19, 48.84, 48.51]</Series_Complete_Pop_Pct>
+	<Static>
+		<Black>0.04</Black>
+		<Healthcare_Access_and_Quality_Index>89.9</Healthcare_Access_and_Quality_Index>
+		<Older_at_high_risk>0.6</Older_at_high_risk>
+		<Population>3155070</Population>
+		<White>0.91</White>
+		<adults_at_high_risk>0.37</adults_at_high_risk>
+		<dem_percent>0.45</dem_percent>
+		<health_care_spending>25.0</health_care_spending>
+		<healthcare_utilization>0.085</healthcare_utilization>
+		<medicaid_coverage>0.195</medicaid_coverage>
+		<medicaid_spending>5.3</medicaid_spending>
+		<medicare_coverage>0.156</medicare_coverage>
+		<medicare_spending_by_residence>10.0</medicare_spending_by_residence>
+		<over_65>0.18</over_65>
+		<poor_health_status>0.144</poor_health_status>
+		<poverty_rate>0.114</poverty_rate>
+		<private_health_insurance_spending>9.0</private_health_insurance_spending>
+		<rep_percent>0.53</rep_percent>
+		<social_vulnerability_index>0.29</social_vulnerability_index>
+		<state_name>Iowa</state_name>
+		<under_20>0.26</under_20>
+		<uninsured_percent>0.047</uninsured_percent>
+	</Static>
+	<hospitalization_per_100k>[5.1, 3.6, 2.9]</hospitalization_per_100k>
+	<previous_infection_12w>[0.4, 0.4, 0.5]</previous_infection_12w>
+	<reported_cases_per_100k>[44.2, 20.6, 44.2]</reported_cases_per_100k>
+</information>
+
+Now, predict the trend of infection for the next week from the available options: [SUBSTANTIAL INCREASING: Substantial increasing, MODERATE INCREASING: Moderate Increasing, STABLE: Stable, SUBSTANTIAL DECREASE: Substantial Decrease, MODERATE DECREASE: Moderate Decrease].

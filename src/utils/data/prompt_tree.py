@@ -9,17 +9,23 @@ from collections import OrderedDict
 
 
 class PromptTree:
-    def __init__(self, cfg, data, id, hierarchy, name_alias, style='xml', label=None):
-        static_info = data[id].Static_description if cfg.use_static_text \
-            else data[id][cfg.data.static_cols].T.squeeze().to_dict()
-        info_dict = data[id][cfg.data.dynamic_cols].T.squeeze().to_dict()
-        if cfg.use_seq_encoder:
-            for cont_field in cfg.in_cont_fields:
+    def __init__(self, cfg, data, id, name_alias, style='xml', label=None):
+        prompt = ''
+        info_dict = {}
+        if cfg.use_static_text:  # Add static text as prompt prefix
+            prompt += data[id].Static_description + '\n'
+        else:  # Add static text to info_dict to be further formatted
+            info_dict['Static'] = data[id][cfg.data.static_cols].T.squeeze().to_dict()
+
+        for cont_field in cfg.data.dynamic_cols:
+            if cfg.use_seq_encoder and cont_field in cfg.in_cont_fields:
                 info_dict[cont_field] = f'<{cont_field.upper()}-EMB>'
+            else:
+                info_dict[cont_field] = str(data[id][cont_field])
+
         self.style = style
-        self.hierarchy = hierarchy
         self.label = label
-        prompt = static_info + '\n'
+
         if self.style == 'json':
             prompt += json.dumps(info_dict, indent=4)
         elif self.style == 'xml':
