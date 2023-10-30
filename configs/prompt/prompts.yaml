@@ -69,7 +69,7 @@ prompt_templates:
         <answer>{answer}</answer>
   question:
     sft: >-
-      \n{info}\nBased on the given information above, your goal is to predict the ${target_description}. Remember, your answer should be in the form of the class label.\n
+      \n{info}\n\nNow, predict the ${target_description} from the available options: ${data.label_description}.
   gpt:
     base: >- # Researcher Arxiv
       The answer is: {answer}.

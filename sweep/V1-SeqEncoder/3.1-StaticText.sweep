@@ -1,0 +1,61 @@
+# sw sweep/V1-SeqEncoder/2.0-RoughSearch.sweep -ga100
+command:
+  - ${interpreter}
+  - sweep/scripts/hydra_sweep_launcher.py
+  - src/scripts/run_covid_llm_sft.py
+  - -t # For torchrun launch
+  - use_deepspeed=true use_wandb=true
+  - ${args}
+method: grid # Bayesian
+metric:
+  goal: maximize
+  name: val_acc
+name: 3.2-StaticText
+parameters:
+  # ! Common Exp Settings
+  total_steps:
+    values:
+      - 1000
+  llm.base_model:
+    values:
+      - llama2-7b
+#      - llama2-7b-chat
+  lora.r:
+    values:
+      - -1
+#      - 2
+      - 4
+#      - 16
+#      - 32
+  dropout:
+    values:
+      - 0.2
+#      - 0.5
+  lr:
+    values:
+      - 2e-5
+  target:
+    values:
+#      - r1 # Risk for the next week
+#      - r2 # Trend for the next week
+#      - r3 # Trend for the next week
+#      - r4 # Trend for the next week
+      - t1 # Trend for the next week
+#      - t2 # Trend for the next week
+#      - t3 # Trend for the next week
+#      - t4 # Trend for the next week
+  cont_fields:
+    values:
+      - all
+      - hos_only
+      - change_only
+      - change_hos
+  in_weeks:
+    values:
+#      - 1
+      - 3
+      - 5
+  use_static_text:
+    values:
+      - true
+      - false

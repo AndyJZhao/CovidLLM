@@ -22,14 +22,17 @@ encoder:
 
 cont_fields: all
 _cont_fields_lookup:
-  all: [ 'hospitalization_per_100k', 'reported_cases_per_100k', # 'previous_infection_12w', 关键信息都是前两个
+  all: [ 'Change', 'hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w', #关键信息都是前两个
          'Dose1_Pop_Pct', 'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct' ]
   hos_only: [ 'hospitalization_per_100k']
+  change_only: [ 'Change']
+  change_hos: ['Change', 'hospitalization_per_100k']
   infection: [ 'hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w' ]
   vaccine: [ 'Dose1_Pop_Pct', 'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct' ]
 in_cont_fields: ${_cont_fields_lookup.${cont_fields}}
 
 # @ Demo for In-Context-Learning
+use_static_text: true
 use_demo: true
 demo:
   #  select_method: first # Fixed seed examples for every sample
@@ -95,7 +98,7 @@ ds_config_path: configs/dsconfig/openllama_peft_stage_${stage}.json
 use_flash_attn: false
 # @ Text2Text fields: Upper
 
-dropout: 0.5
+dropout: 0.2
 eval_choice_only: ${add_class_token}
 alias: ${llm.name}-Split${data.split}-${data.alias}-${target}
 
