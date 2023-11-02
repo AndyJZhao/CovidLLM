@@ -84,7 +84,6 @@ class CovidData:
             return ''
 
     def build_prompt_tree(self, id, supervised=False):
-        # ! Center node graph
         label = self.df.iloc[id][self.cfg.target] if supervised else None
         prompt_tree = PromptTree(self.cfg, data=self, id=id,
                                  label=label, name_alias=self.cfg.tree_node_alias,

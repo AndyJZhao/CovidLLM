@@ -14,4 +14,27 @@ Arizona with above-average population and below-average Black demographic, voted
 	<reported_cases_per_100k>[38.2, 94.0, 139.4]</reported_cases_per_100k>
 </information>
 
-Now, predict the trend of infection for the next week from the available options: [SUBSTANTIAL INCREASING: Substantial increasing, MODERATE INCREASING: Moderate Increasing, STABLE: Stable, SUBSTANTIAL DECREASE: Substantial Decrease, MODERATE DECREASE: Moderate Decrease].
+Now, predict the trend of infection for the next 4 week from the available options: [SUBSTANTIAL INCREASING: Substantial increasing, MODERATE INCREASING: Moderate Increasing, STABLE: Stable, SUBSTANTIAL DECREASE: Substantial Decrease, MODERATE DECREASE: Moderate Decrease].
+
+[SUBSTANTIAL INCREASING, SUBSTANTIAL INCREASING, MODERATE INCREASING, STABLE, MODERATE DECREASE]
+
+
+
+FULL DIALOG
+
+USER: You are an assistant that forecasts trend of infection for the next week for a US state based on the state information below:
+
+Alabama with close to average population and above-average Black demographic, voted for Republicans in the recent Presidential election. During the COVID-19 pandemic, overall healthcare systems performed worse than the national average, with worse than average Access and Affordability, Prevention and Treatment, population health conditions among one of the worst states for Income Disparity. Alabama has worse than average high ICU stress and hospital staffing shortages.
+<information>
+	<Additional_Doses_Vax_Pct>[0.0, 0.0, 0.0]</Additional_Doses_Vax_Pct>
+	<C4M_Restrictions_on_gatherings>['no restrictions', 'no restrictions', 'no restrictions']</C4M_Restrictions_on_gatherings>
+	<C6M_Stay_at_home_requirements>['recommend not leaving house', 'recommend not leaving house', 'recommend not leaving house']</C6M_Stay_at_home_requirements>
+	<Change><CHANGE-EMB></Change>
+	<Dose1_Pop_Pct>[0.0, 0.0, 0.0]</Dose1_Pop_Pct>
+	<Series_Complete_Pop_Pct>[0.0, 0.0, 0.0]</Series_Complete_Pop_Pct>
+	<hospitalization_per_100k>[54.9, 54.9, 54.9]</hospitalization_per_100k>
+	<previous_infection_12w>[3.5, 3.5, 3.5]</previous_infection_12w>
+	<reported_cases_per_100k>[547.0, 547.0, 547.0]</reported_cases_per_100k>
+</information>
+
+Now, predict the trend of infection for the next week from the available options: [SUBSTANTIAL INCREASING: Substantial increasing, MODERATE INCREASING: Moderate Increasing, STABLE: Stable, SUBSTANTIAL DECREASE: Substantial Decrease, MODERATE DECREASE: Moderate Decrease]. ASSISTANT: The answer is: SUBSTANTIAL INCREASING
