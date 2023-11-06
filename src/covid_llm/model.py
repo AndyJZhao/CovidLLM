@@ -192,7 +192,10 @@ class CovidLLM(nn.Module):
                 tokenizer=self.tokenizer,
                 model=self.llm,
             )
-            self.choice_ids = [self.tokenizer([_]).input_ids[0][1] for _ in class_tokens]
+            if cfg.llm.base_model.startswith('yi'):
+                self.choice_ids = [self.tokenizer([_]).input_ids[0][0] for _ in class_tokens]
+            else:
+                self.choice_ids = [self.tokenizer([_]).input_ids[0][1] for _ in class_tokens]
             self.tok_to_id = bidict({t: self.tokenizer.convert_tokens_to_ids(t) for t in special_tokens})
             self.id_to_tok = self.tok_to_id.inverse
             self.cls_tokens = self.tokenizer.convert_tokens_to_ids(class_tokens)
@@ -316,9 +319,10 @@ class CovidLLM(nn.Module):
     def encode_sequence(self, node_ids):
         bsz = len(node_ids)
         if self.encoder is not None:
+            num_directions = 2 if self.cfg.encoder.bidirectional else 1
+            get_fwd_rnn_emb = lambda x: x.view(bsz, -1, num_directions, self.hidden_dim)[:, -1, 0, :].squeeze()
             seq_emb = {  # Last sequence embedding of [bsz, seq_len, llm_hidden_dim]
-                f: encoder(self.cont_feat[f][node_ids].to(self.device))[0].view(bsz, -1, self.hidden_dim)[:, -1,
-                   :].squeeze()
+                f: get_fwd_rnn_emb(encoder(self.cont_feat[f][node_ids].to(self.device))[0])
                 for f, encoder in self.encoder.items()
             }  # [ batch_size , llm_hidden_dim ]
         else:

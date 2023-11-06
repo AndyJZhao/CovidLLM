@@ -21,4 +21,4 @@ ogb
 chunkdot
 numba
 openai
-sentencepiece
+einops
