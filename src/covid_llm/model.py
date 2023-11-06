@@ -11,7 +11,7 @@ import pandas as pd
 logging.getLogger("transformers").setLevel(logging.WARNING)
 logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-from transformers import StoppingCriteria, LlamaForCausalLM
+from transformers import StoppingCriteria, LlamaForCausalLM, AutoModelForCausalLM
 from typing import Dict
 from . import conversation as conversation_lib
 from utils.basics.os_utils import time_logger
@@ -164,12 +164,12 @@ class CovidLLM(nn.Module):
             use_fast=False,
             model_max_length=max_tgt_len,
             padding_side="right",
-        )
+            trust_remote_code=True)
         # ! UNK and EOS token leads to error
         # self.tokenizer.pad_token = self.tokenizer.unk_token  # Leads to error
         self.tokenizer.pad_token = '<pad>'  # Deal with empty unk token bug
         with time_logger(f'initialization of LLM decoder from {cfg.llm.local_dir}'):
-            self.llm = LlamaForCausalLM.from_pretrained(cfg.llm.local_dir)
+            self.llm = AutoModelForCausalLM.from_pretrained(cfg.llm.local_dir, trust_remote_code=True)
         self.llm.config.use_cache = False
         self.cls_token_names = class_tokens = [r.label_token for i, r in data.label_info.iterrows()]
         field_tokens = [f'<{f.upper()}-EMB>' for f in data.in_cont_fields]
@@ -401,29 +401,4 @@ class CovidLLM(nn.Module):
         batch_confidence, batch_out_text = self.get_choice_prob(batch_output.scores)
         outputs = {'dialog': [p + o for p, o in zip(batch_input_text, batch_out_text)],
                    'generated_text': batch_out_text, 'confidence': batch_confidence}
-        if self.cfg.add_loop_inference:
-            self.logger.info(f"BATCH inference time: {time.time() - start_time:.2f} seconds")
-            input_id_list = self.tokenizer(batch_input_text).input_ids
-            loop_outputs = []
-            # ! Generate one by one as batch generation requires adding <pad> tokens to prompt and leads to confusion
-            start_time = time.time()
-            for i, (node_id, input_ids) in enumerate(zip(node_ids, input_id_list)):
-                input_ids = th.as_tensor(input_ids).view(1, -1).to(self.device)
-                input_embeds = self.get_input_embeddings(input_ids)
-                # Run model inference
-                with th.inference_mode():
-                    output = self.llm.generate(
-                        inputs_embeds=input_embeds,
-                        max_new_tokens=inputs['max_tgt_len'] if not choice_only else 3,
-                        output_scores=choice_only,
-                        do_sample=False,
-                        use_cache=True,
-                        return_dict_in_generate=choice_only,
-                    )
-
-                # Decode output tokens
-                batch_confidence, batch_out_text = self.get_choice_prob(batch_output.scores)
-                loop_outputs.append(batch_out_text)
-            outputs['loop_generated_text'] = loop_outputs
-            self.logger.info(f"LOOP inference time: {time.time() - start_time:.2f} seconds")
         return outputs

@@ -12,6 +12,7 @@ tree_node_alias:
 #encoder: LSTM
 use_seq_encoder: true
 encoder_type: GRU
+bi_encoder: true
 encoder:
   _target_: torch.nn.${encoder_type}
   input_size: 1
@@ -19,7 +20,7 @@ encoder:
   num_layers: 2
   dropout: ${dropout}
   batch_first: true
-  bidirectional: false
+  bidirectional: ${bi_encoder}
 
 cont_fields: all
 _cont_fields_lookup:

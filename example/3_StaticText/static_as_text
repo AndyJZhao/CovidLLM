@@ -37,4 +37,6 @@ Alabama with close to average population and above-average Black demographic, vo
 	<reported_cases_per_100k>[547.0, 547.0, 547.0]</reported_cases_per_100k>
 </information>
 
-Now, predict the trend of infection for the next week from the available options: [SUBSTANTIAL INCREASING: Substantial increasing, MODERATE INCREASING: Moderate Increasing, STABLE: Stable, SUBSTANTIAL DECREASE: Substantial Decrease, MODERATE DECREASE: Moderate Decrease]. ASSISTANT: The answer is: SUBSTANTIAL INCREASING
+Now, predict the trend of infection for the next week from the available options: [SUBSTANTIAL INCREASING: Substantial increasing, MODERATE INCREASING: Moderate Increasing, STABLE: Stable, SUBSTANTIAL DECREASE: Substantial Decrease, MODERATE DECREASE: Moderate Decrease].
+
+ASSISTANT: The answer is: SUBSTANTIAL INCREASING
