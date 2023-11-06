@@ -371,7 +371,6 @@ class CovidLLM(nn.Module):
     def generate(self, inputs, choice_only=False):
         # ! Prepare input
         node_ids, prompt_tree_lol, conversation_list = inputs['batch']
-        # <node> [1286, 72, 19] </node> -> <node> [3, 768] emb </node>
         batch_input_text = []
         for c in conversation_list:
             conv = self.conv_template.copy()

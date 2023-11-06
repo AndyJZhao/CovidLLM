@@ -1,4 +1,4 @@
-# sw sweep/V1-SeqEncoder/3.2-StaticText-2.sweep -ga100
+# sw sweep/V1-SeqEncoder/3.4-BiLSTM.sweep -ga100
 command:
   - ${interpreter}
   - sweep/scripts/hydra_sweep_launcher.py
@@ -11,16 +11,12 @@ method: grid # Bayesian
 metric:
   goal: maximize
   name: val_acc
-name: 3.4-Yi6B
+name: 3.4-BiLSTM
 parameters:
   # ! Common Exp Settings
   dropout:
     values:
       - 0.2
-  llm.base_model:
-    values:
-      - yi-6b
-      - llama2-7b
   lr:
     values:
       - 2e-5
@@ -41,5 +37,13 @@ parameters:
   in_weeks:
     values:
       - 3
-#      - 4
-#      - 5
+  #      - 4
+  #      - 5
+  encoder_type:
+    values:
+      - GRU
+      - LSTM
+  bi_encoder:
+    values:
+      - true
+      - false
