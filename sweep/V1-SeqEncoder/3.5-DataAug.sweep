@@ -1,0 +1,48 @@
+# sw sweep/V1-SeqEncoder/3.5-DataAug.sweep -ga100
+command:
+  - ${interpreter}
+  - sweep/scripts/hydra_sweep_launcher.py
+  - src/scripts/run_covid_llm_sft.py
+  - -t # For torchrun launch
+  - use_deepspeed=true use_wandb=true
+  - lora.r=-1 llm.base_model=llama2-7b total_steps=1000
+  - ${args}
+method: grid # Bayesian
+metric:
+  goal: maximize
+  name: val_acc
+name: 3.4-BiLSTM
+parameters:
+  # ! Common Exp Settings
+  dropout:
+    values:
+      - 0.2
+  lr:
+    values:
+      - 2e-5
+  target:
+    values:
+      - r1
+      - r2
+      - r3
+      - r4
+      - t1
+      - t2
+      - t3
+      - t4
+  cont_fields:
+    values:
+      - change_hos
+  in_weeks:
+    values:
+      - 3
+  encoder_type:
+    values:
+      - GRU
+  bi_encoder:
+    values:
+      - false
+  data_aug:
+    values:
+      - true
+      - false

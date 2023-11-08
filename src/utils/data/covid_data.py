@@ -26,7 +26,7 @@ class CovidData:
         self.cfg = cfg
         # ! Initialize Data Related
         self.raw_data = raw_data = uf.pickle_load(cfg.data.raw_data_file)
-        self.df = df = raw_data.merged_dynamic
+        self.df = df = raw_data.aug_data if cfg.data_aug else raw_data.data
         self.split_ids = splits = raw_data.splits[cfg.data.split]
         label_info = raw_data.label_info
         target_type = {'t': 'trend', 'r': 'risk'}[cfg.target[0]]
@@ -57,17 +57,10 @@ class CovidData:
 
         self.in_cont_fields = cfg.in_cont_fields
         # ! Initialize Sequential Data
-        if cfg.in_weeks > 1:
-            for col in tqdm(cfg.data.dynamic_cols, 'Processing sequential data'):
-                self.df[col] = df.apply(partial(self.process_seq_col, col=col), axis=1)
+        process_seq_col = lambda x, col: x[col][:cfg.in_weeks]
+        for col in tqdm(cfg.data.dynamic_cols, 'Processing sequential data'):
+            self.df[col] = df.apply(partial(process_seq_col, col=col), axis=1)
         return
-
-    def process_seq_col(self, r, col):
-        week_row_ids = {i: np.where(self.df.uid == f'{r.state_name}-W{max(r.week_id - i, 0)}')[0][0] for i in
-                        range(self.cfg.in_weeks)}
-        seq = [self.df.iloc[i][col] for _, i in week_row_ids.items()]
-        assert len(seq) >= 1
-        return seq
 
     def __getitem__(self, item):
         return self.df.iloc[item]
