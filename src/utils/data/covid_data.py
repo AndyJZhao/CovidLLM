@@ -27,6 +27,7 @@ class CovidData:
         # ! Initialize Data Related
         self.raw_data = raw_data = uf.pickle_load(cfg.data.raw_data_file)
         self.df = df = raw_data.aug_data if cfg.data_aug else raw_data.data
+        self.mse_val_map = raw_data.mse_val_map
         self.split_ids = splits = (raw_data.aug_splits if cfg.data_aug else raw_data.splits)[cfg.data.split]
         label_info = raw_data.label_info
         target_type = {'t': 'trend', 'r': 'risk'}[cfg.target[0]]
