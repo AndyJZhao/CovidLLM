@@ -14,24 +14,10 @@ from omegaconf import OmegaConf
 from utils.basics import init_path, lot_to_tol, time_logger
 from utils.pkg.distributed import master_process_only
 from .model import IGNORE_INDEX
-
+from .metrics import calc_acc, calc_mse_from_cls_labels
 logging.getLogger("transformers").setLevel(logging.WARNING)
 logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-
-
-def indices_to_binary(n_classes, indices):
-    binary_list = [0] * n_classes
-    for index in indices:
-        binary_list[index] = 1
-    return binary_list
-
-
-def compare_eval(split, results, pred1, pred2, logger):
-    results[f'{split}_inf_agreement_rate'] = np.mean(_ := np.array(pred2) == np.array(pred1))
-    logger.warning(f"Inference agreement rate: {results[f'{split}_inf_agreement_rate']}")
-    if results[f'{split}_inf_agreement_rate'] < 1:
-        logger.warning(f'Different prediction samples:\n{list(zip(pred1[~_], pred2[~_]))[:50]}')
 
 
 class Agent:
@@ -81,11 +67,10 @@ class Agent:
                     logger.warning(f'Failed gold and prediction samples:\n'
                                    f"{list(zip(label[~eval_res['is_valid']], pred[~eval_res['is_valid']]))[:50]}")
             if 'acc' in self.cfg.metrics:
-                results[f'{split}_acc'] = np.mean(label == pred) if len(label) == len(pred) else -1
-            if 'loop_pred' in eval_res:
-                results[f'{split}_loop_inf_acc'] = np.mean(label == eval_res['loop_pred']) if len(label) == len(
-                    pred) else -1
-                compare_eval(split, results, pred, eval_res['loop_pred'], logger)
+                results[f'{split}_acc'] = calc_acc(label, pred)
+            if 'mse' in self.cfg.metrics:
+                results[f'{split}_acc'] = calc_mse_from_cls_labels(label, pred, self.data.mse_val_map)
+
 
         logger.warning(results)
         return results
