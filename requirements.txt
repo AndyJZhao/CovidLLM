@@ -2,7 +2,6 @@ packaging
 fschat
 peft
 transformers
-torch_geometric
 pytz
 omegaconf
 hydra-core

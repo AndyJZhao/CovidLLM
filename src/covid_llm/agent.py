@@ -66,7 +66,7 @@ class Agent:
                 output = self.predict(eval_batch, self.cfg.eval_choice_only)
                 # Update dataframe to save
                 for col in ['dialog', 'confidence', 'pred']:
-                    self.data.df.loc[list(eval_batch[0]),col] = output[col]
+                    self.data.df.loc[list(eval_batch[0]), col] = output[col]
                 for item, value in output.items():
                     eval_res[item].append(value)
             eval_res = {k: np.concatenate(v) if isinstance(v[0], Iterable) else np.array(v)

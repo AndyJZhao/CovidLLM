@@ -5,13 +5,14 @@ command:
   - src/scripts/run_covid_llm_sft.py
   - -t # For torchrun launch
   - use_deepspeed=true use_wandb=true
-  - lora.r=-1 llm.base_model=llama2-7b total_steps=1000
+  - lora.r=-1 llm.base_model=llama2-7b total_steps=2000
   - ${args}
 method: grid # Bayesian
 metric:
   goal: maximize
   name: val_acc
-name: 3.4-BiLSTM
+
+name: 3.5-DataAug
 parameters:
   # ! Common Exp Settings
   dropout:
@@ -22,14 +23,20 @@ parameters:
       - 2e-5
   target:
     values:
-      - r1
-      - r2
-      - r3
-      - r4
+      #      - r1
+      #      - r2
+      #      - r3
+      #      - r4
       - t1
-      - t2
-      - t3
-      - t4
+  #      - t2
+  #      - t3
+  #      - t4
+  eq_batch_size:
+    values:
+      - 4
+      - 8
+      - 12
+      - 18
   cont_fields:
     values:
       - change_hos

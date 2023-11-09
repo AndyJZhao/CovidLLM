@@ -10,8 +10,8 @@ _llm_md_lookup:
     inf_bsz: 12 # FP16, 40GB
   llama2-7b:
     hf_name: meta-llama/Llama-2-7b-hf
-    max_bsz_per_gpu: 12 # FP16, 40GB
-    inf_bsz: 12 # FP16, 40GB
+    max_bsz_per_gpu: 18 # FP16, 40GB
+    inf_bsz: 18 # FP16, 40GB
   llama2-7b-chat:
     hf_name: meta-llama/Llama-2-7b-chat-hf
     max_bsz_per_gpu: 12 # FP16, 40GB

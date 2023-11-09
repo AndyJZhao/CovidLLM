@@ -27,8 +27,8 @@ cont_fields: all
 _cont_fields_lookup:
   all: [ 'Change', 'hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w', #关键信息都是前两个
          'Dose1_Pop_Pct', 'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct' ]
-  hos_only: [ 'hospitalization_per_100k']
   change_only: [ 'Change']
+  hos_only: [ 'hospitalization_per_100k']
   change_hos: ['Change', 'hospitalization_per_100k']
   infection: [ 'hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w' ]
   vaccine: [ 'Dose1_Pop_Pct', 'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct' ]
