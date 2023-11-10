@@ -36,6 +36,7 @@ in_cont_fields: ${_cont_fields_lookup.${cont_fields}}
 
 # @ Demo for In-Context-Learning
 use_static_text: true
+use_dynamic_text: true
 use_demo: true
 demo:
   #  select_method: first # Fixed seed examples for every sample

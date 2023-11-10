@@ -6,7 +6,7 @@ data:
   alias: Covid
   raw_data_file: data/processed.pkl
   split: random
-#  split: by_time
+  #  split: by_time
   text:
     mode: label_name # How to generate text for each node?
   task_description: >-
@@ -40,27 +40,27 @@ data:
     'Change',
     # @ Infection
     'hospitalization_per_100k', # Current Risk
-    'reported_cases_per_100k',
-    'previous_infection_12w',
+    #    'reported_cases_per_100k', # * previous dynamic cols
+    #    'previous_infection_12w', # * previous dynamic cols
     # @ Vaccine
-    'Dose1_Pop_Pct',
-    'Series_Complete_Pop_Pct',
-    'Additional_Doses_Vax_Pct',
+    #    'Dose1_Pop_Pct', # * previous dynamic cols
+    #    'Series_Complete_Pop_Pct', # * previous dynamic cols
+    #    'Additional_Doses_Vax_Pct', # * previous dynamic cols
     # @ Regulations
     #    'C1M_School closing',
     #    'C2M_Workplace closing',
     #    'C3M_Cancel public events',
-    'C4M_Restrictions on gatherings',
-    'C6M_Stay at home requirements',
+    #    'C4M_Restrictions on gatherings', # * previous dynamic cols
+    #    'C6M_Stay at home requirements', # * previous dynamic cols
     #    'C7M_Restrictions on internal movement',
     #    'C8NV_International travel controls',
     #    'C8V_International travel controls',
     # * Temporarily abandoned
-#    'H1_Public information campaigns',
-#    'H2_Testing policy',
-#    'H3_Contact tracing',
-#    'H6M_Facial Coverings',
-#    'H8M_Protection of elderly people',
+    #    'H1_Public information campaigns',
+    #    'H2_Testing policy',
+    #    'H3_Contact tracing',
+    #    'H6M_Facial Coverings',
+    #    'H8M_Protection of elderly people',
     # @ Other ignored_cols
     #    'fips', 'Week', 'Week_start', 'Week_end' # No need to let LLM know the exact dates
   ]
