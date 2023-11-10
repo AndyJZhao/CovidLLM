@@ -35,4 +35,5 @@ Hospitalization data:
 - `use_static_text`: Static state description. 
 - `use_dynamic_text`: Dynamic state description, includes vaccine, previous hospitalization of 12 weeks, and policy information (e.g. restriction on gathering).
 - `cont_fields`: Fields of continuous sequential data.
+- `llm.base_model`: `llama2-7b` as default, requires 48 GB GPU memory. Use `llm.base_model=tinygpt` for debugging.
 
