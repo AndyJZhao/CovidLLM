@@ -1,4 +1,4 @@
-# sw sweep/V1-SeqEncoder/3.5-DataAug.sweep
+# sw sweep/V1-SeqEncoder/4.0-Dynamic.sweep
 command:
   - ${interpreter}
   - sweep/scripts/hydra_sweep_launcher.py
