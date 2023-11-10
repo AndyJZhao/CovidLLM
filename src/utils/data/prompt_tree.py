@@ -13,13 +13,14 @@ class PromptTree:
         prompt = ''
         info_dict = {}
         if cfg.use_static_text:  # Add static text as prompt prefix
-            prompt += data[id].Static_description + '\n'
+            prompt += data[id].Static_description + '\n\n'
         else:  # Add static text to info_dict to be further formatted
             info_dict['Static'] = data[id][cfg.data.static_cols].T.squeeze().to_dict()
 
         if cfg.use_dynamic_text:  # Add static text as prompt prefix
-            prompt += data[id].Dynamic_description + '\n'
+            prompt += data[id].Dynamic_description + '\n\n'
 
+        prompt += 'The sequential information of hospitalization is:\n'
         for cont_field in cfg.data.dynamic_cols:
             if cfg.use_seq_encoder and cont_field in cfg.in_cont_fields:
                 info_dict[cont_field] = f'<{cont_field.upper()}-EMB>'
