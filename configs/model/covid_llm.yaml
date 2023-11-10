@@ -8,7 +8,7 @@ in_weeks: 2
 target: t_seq
 tree_node_alias:
   x: feature
-data_aug: true
+data_aug: false
 #encoder: RNN
 #encoder: LSTM
 use_seq_encoder: true

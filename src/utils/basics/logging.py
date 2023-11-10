@@ -22,7 +22,7 @@ logger = rich_logger = logging.getLogger("rich")
 # install(show_locals=True, width=150, suppress=[hydra])
 logger.info("Rich Logger initialized.")
 
-NonPercentageFloatMetrics = ['loss', 'time']
+PercentageFloatMetrics = ['acc']
 
 
 def get_best_by_val_perf(res_list, prefix, metric):
@@ -39,7 +39,7 @@ def metric_processing(log_dict):
     # Round floats and process percentage
     for k, v in log_dict.items():
         if isinstance(v, float):
-            is_percentage = not judge_by_partial_match(k, NonPercentageFloatMetrics)
+            is_percentage = judge_by_partial_match(k, PercentageFloatMetrics)
             if is_percentage:
                 log_dict[k] *= 100
             log_dict[k] = round(log_dict[k], 4)

@@ -71,7 +71,8 @@ class Agent:
                 results[f'{split}_acc'] = calc_acc(label, pred)
             if 'mse' in self.cfg.metrics:
                 results[f'{split}_mse'] = calc_mse_from_cls_labels(label, pred, self.data.mse_val_map)
-            results.update({f'{split}-PD/{k}': v for k, v in calc_prediction_distribution(pred, self.model.cls_token_names)})
+            pd_dict = calc_prediction_distribution(pred, self.model.cls_token_names)
+            results.update({f'{split}-PD/{k}': v for k, v in pd_dict.items()})
         logger.warning(results)
         return results
 
