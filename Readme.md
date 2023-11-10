@@ -34,4 +34,5 @@ Hospitalization data:
 - `total_steps`: Number of training steps.
 - `use_static_text`: Static state description. 
 - `use_dynamic_text`: Dynamic state description, includes vaccine, previous hospitalization of 12 weeks, and policy information (e.g. restriction on gathering).
+- `cont_fields`: Fields of continuous sequential data.
 
