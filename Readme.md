@@ -18,5 +18,5 @@ python run_covid_llm_sft.py use_deepspeed=true use_wandb=true lora.r=-1 llm.base
 - `encoder_type`: RNN, GRU, LSTM have similar performances; we use GRU as default.
 - `total_steps`: Number of training steps.
 - `use_static_text`: Static state description. 
-- `use_dynamic_text`: Dynamic state description.
+- `use_dynamic_text`: Dynamic state description, includes vaccine, previous hospitalization of 12 weeks, and policy information (e.g. restriction on gathering).
 

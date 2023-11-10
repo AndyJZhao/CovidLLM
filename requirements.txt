@@ -16,9 +16,5 @@ pandas
 easydict
 bidict
 scikit-learn
-dgl
-ogb
-chunkdot
-numba
 openai
 einops
