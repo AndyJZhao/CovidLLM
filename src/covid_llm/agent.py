@@ -14,7 +14,7 @@ from omegaconf import OmegaConf
 from utils.basics import init_path, lot_to_tol, time_logger
 from utils.pkg.distributed import master_process_only
 from .model import IGNORE_INDEX
-from .metrics import calc_acc, calc_mse_from_cls_labels
+from .metrics import calc_acc, calc_mse_from_cls_labels, calc_prediction_distribution
 
 logging.getLogger("transformers").setLevel(logging.WARNING)
 logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
@@ -71,7 +71,7 @@ class Agent:
                 results[f'{split}_acc'] = calc_acc(label, pred)
             if 'mse' in self.cfg.metrics:
                 results[f'{split}_mse'] = calc_mse_from_cls_labels(label, pred, self.data.mse_val_map)
-
+            results.update({f'{split}-PD/{k}': v for k, v in calc_prediction_distribution(pred, self.model.cls_token_names)})
         logger.warning(results)
         return results
 
