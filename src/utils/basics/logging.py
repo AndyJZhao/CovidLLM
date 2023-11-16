@@ -97,10 +97,11 @@ class WandbExpLogger:
         if self.log_metric_to_stdout:
             self.log(metric_dict, level=level)
 
-    def lookup_metric_checkpoint_by_best_eval(self, eval_metric, out_metrics=None):
+    def lookup_metric_checkpoint_by_best_eval(self, eval_metric, out_metrics=None, max_val=True):
         if len(self.results[eval_metric]) == 0:
             return {}
-        best_val_ind = self.results[eval_metric].index(max(self.results[eval_metric]))
+        best_val_ind = self.results[eval_metric].index(max(self.results[eval_metric])) if max_val\
+            else self.results[eval_metric].index(min(self.results[eval_metric]))
         out_metrics = out_metrics or self.results.keys()
         return {m: self.results[m][best_val_ind] for m in out_metrics}
 

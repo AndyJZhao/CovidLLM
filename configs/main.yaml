@@ -3,6 +3,7 @@
 defaults:
   - _self_ # To be overwritten by experimental settings
   - optional user: env # (optional environment settings to add
+  - env: env
   - data: covid
   - llm: llama_peft
   - model: covid_llm
@@ -23,6 +24,7 @@ path:
   data_storage: data/
   temp: temp/ # Removable
   out_dir: output/ #
+  hf_local: ../CovidLLM/output/
 
 working_dir: ${path.temp}working_dir/${.uid}/ # For deletable temporary files.
 out_dir: ${path.out_dir}${oc.select:wandb.sweep_id,local}/${model.name}/${.uid}-${.alias}/ # For files to be saved, to be initialized
@@ -30,7 +32,8 @@ uid: null # To be generated in the main program
 #
 eval_freq: 50
 use_wandb: false
-alias: ${llm.name}${data.build_func}${data.name}
+# alias: ${llm.name}${data.build_func}${data.name}
+alias: ${data.task_type}-${data.task_file}-${lr}-${dropout}
 wandb:
   id: null
   name: ${alias}

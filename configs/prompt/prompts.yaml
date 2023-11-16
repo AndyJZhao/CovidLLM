@@ -36,6 +36,7 @@ _target_description_lookup:
   t2: trend of hospitalization for the two weeks later
   t3: trend of hospitalization for the three weeks later
   t4: trend of hospitalization for the four weeks later
+  t_seq: none
 target_description: ${_target_description_lookup.${target}}
 prompt_templates:
   human:

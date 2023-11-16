@@ -112,7 +112,7 @@ def train_covid_llm(cfg):
     logger.critical(f"Saved results to {cfg.save_file}")
     logger.save_file_to_wandb(cfg.save_file, base_path=cfg.out_dir)
     # update final valid and test acc
-    final_results = logger.lookup_metric_checkpoint_by_best_eval('val_mse', out_metrics=None)
+    final_results = logger.lookup_metric_checkpoint_by_best_eval('val_mse', out_metrics=None, max_val=False)
     logger.wandb_summary_update(final_results, finish_wandb=True)
 
 

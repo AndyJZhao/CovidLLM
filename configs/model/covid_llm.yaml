@@ -4,8 +4,8 @@ model:
 
 # @ CovidLLM Settings
 in_weeks: 2
-#target: t1
-target: t_seq
+target: t1
+# target: t_seq
 tree_node_alias:
   x: feature
 data_aug: false
@@ -65,7 +65,7 @@ remove_quotation: true
 # @ LLM
 # LoRA
 lora:
-  r: 16 # LoRA will be turned off if r<0
+  r: -1 # LoRA will be turned off if r<0
 
   alpha: ${.r}
   dropout: 0.1
@@ -103,7 +103,7 @@ use_flash_attn: false
 
 dropout: 0.2
 eval_choice_only: ${add_class_token}
-alias: ${llm.name}-Split${data.split}-${data.alias}-${target}
+# alias: ${llm.name}-Split${data.split}-${data.alias}-${target}
 
 #
 add_class_token: true
