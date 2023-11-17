@@ -73,7 +73,7 @@ lora:
 #  modules_to_save: [ embed_tokens, lm_head ]
 
 # @ EVALUATE
-metrics: [ 'acc' , 'mse']
+metrics: [ 'acc' , 'mse', 'wmse']
 eval_embeds_path: null
 eval_sets: [ 'train', 'val' , 'test' ]
 #eval_sets: [ 'train']
