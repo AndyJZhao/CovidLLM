@@ -31,6 +31,8 @@ out_dir: ${path.out_dir}${oc.select:wandb.sweep_id,local}/${model.name}/${.uid}-
 uid: null # To be generated in the main program
 #
 eval_freq: 50
+best_eval_metrics: "val_mse"
+max_best_eval_metrics: false   # minimize the mse
 use_wandb: false
 # alias: ${llm.name}${data.build_func}${data.name}
 alias: ${data.task_type}-${data.task_file}-${lr}-${dropout}

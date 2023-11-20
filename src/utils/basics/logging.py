@@ -6,6 +6,7 @@ import wandb
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.traceback import install
+import numpy as np
 
 install()
 logging.basicConfig(
@@ -116,6 +117,13 @@ class WandbExpLogger:
     def save_file_to_wandb(self, file, base_path, policy='now', **kwargs):
         if self.wandb_on and self.local_rank <= 0:
             wandb.save(file, base_path=base_path, policy=policy, **kwargs)
+            
+    def save_histograms_to_wandb(self, class_distribution):
+        if self.wandb_on and self.local_rank <= 0:
+            for k, v in class_distribution.items():
+                table = wandb.Table(data=v, columns=[k])
+                wandb.log({f'class_distribution/{k}': wandb.plot.histogram(table, k,
+ 	                title=f"{k} Class Distribution")})
 
 
 def wandb_finish(result=None):

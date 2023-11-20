@@ -6,3 +6,4 @@ configs/user
 configs/env/*
 nohup.out
 /wandb
+*.prof

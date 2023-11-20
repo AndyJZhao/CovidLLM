@@ -22,9 +22,16 @@ def calc_weighted_mse_from_cls_labels(label, confidence, val_map):
         cur_label = labels[i]
         cur_res = 0
         for k,v in conf.items():
+            
+            # if no matched label, wmse is set to 16
+            if np.isnan(v):
+                cur_res = 16
+                break
+            
             k = dict(val_map).get(k)
             diff = k-cur_label
             cur_res += v*(diff**2)
+            
         res.append(cur_res)
     res = np.array(res)
     return res.sum()/len(res)
@@ -38,3 +45,14 @@ def calc_prediction_distribution(pred, class_names):
     for cls in class_names:
         res[cls] = res.get(cls, 0)
     return res
+
+
+def calc_prediction_class_distribution(confidence):
+    distribution = {}
+    for rows in confidence:
+        for k,v in rows.items():
+            if k not in distribution.keys():
+                distribution[k] = [[v]]
+            else:
+                distribution[k].append([v])
+    return distribution

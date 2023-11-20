@@ -26,6 +26,8 @@ from covid_llm.model import CovidLLM
 from utils.data.covid_data import CovidData
 import torch as th
 
+from covid_llm.metrics import calc_prediction_class_distribution
+
 
 @time_logger()
 @hydra.main(config_path=f'{root_path}/configs', config_name='main', version_base=None)
@@ -112,7 +114,9 @@ def train_covid_llm(cfg):
     logger.critical(f"Saved results to {cfg.save_file}")
     logger.save_file_to_wandb(cfg.save_file, base_path=cfg.out_dir)
     # update final valid and test acc
-    final_results = logger.lookup_metric_checkpoint_by_best_eval('val_mse', out_metrics=None, max_val=False)
+    final_results = logger.lookup_metric_checkpoint_by_best_eval(cfg.best_eval_metrics, out_metrics=None, max_val=cfg.max_best_eval_metrics)
+    class_distribution = calc_prediction_class_distribution(data.df['confidence'][data.df['confidence'].notnull()])
+    logger.save_histograms_to_wandb(class_distribution)
     logger.wandb_summary_update(final_results, finish_wandb=True)
 
 
