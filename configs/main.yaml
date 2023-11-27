@@ -35,7 +35,7 @@ best_eval_metrics: "val_mse"
 max_best_eval_metrics: false   # minimize the mse
 use_wandb: false
 # alias: ${llm.name}${data.build_func}${data.name}
-alias: ${data.task_type}-${data.task_file}-${lr}-${dropout}
+alias: ${data.task_file}-${data_aug}-${best_eval_metrics}
 wandb:
   id: null
   name: ${alias}

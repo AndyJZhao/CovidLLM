@@ -47,12 +47,7 @@ class Agent:
     @time_logger()
     def evaluate(self, eval_iter_dict, logger):
         results = {}
-        for split, eval_iter in eval_iter_dict.items():
-            
-            # skip evaluation for train set
-            if split == 'train':
-                continue
-            
+        for split, eval_iter in eval_iter_dict.items():            
             eval_res = defaultdict(list)
             for eval_batch in eval_iter:
                 output = self.predict(eval_batch, self.cfg.eval_choice_only)

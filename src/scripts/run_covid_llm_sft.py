@@ -15,6 +15,8 @@ from utils.pkg.distributed import initialize_deepspeed, initialize_distributed
 from utils.project.exp import init_experiment
 import logging
 import hydra
+import numpy as np
+import pandas as pd
 
 logging.getLogger("transformers").setLevel(logging.WARNING)
 logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
@@ -88,6 +90,7 @@ def train_covid_llm(cfg):
     is_eval = cfg.local_rank == 0
     pbar_refresh_freq = max(agent.total_batch_steps // 100, 10)
     pbar = tqdm(total=agent.total_batch_steps, desc="Training", dynamic_ncols=True, disable=cfg.local_rank > 0)
+    df_to_save = agent.data.df.copy()
     for epoch_i in range(epochs):
         logger.critical(f'Started epoch {epoch_i}.')
         for batch in train_iter:
@@ -95,6 +98,10 @@ def train_covid_llm(cfg):
             if is_eval and current_step % cfg.eval_freq == 0 and current_step >= cfg.min_eval_step:
                 eval_results = agent.evaluate(eval_iter_dict, logger)
                 results.update(eval_results)
+                # record the best one's results
+                if logger.is_the_best_metric(cfg.best_eval_metrics, results, cfg.max_best_eval_metrics):
+                    df_to_save = agent.data.df.copy()
+            
             logger.wandb_metric_log({**results, **{'train/epoch': epoch_i}})
             agent.torch_distributed_barrier()
 
@@ -110,13 +117,21 @@ def train_covid_llm(cfg):
     # save at the end of the training
     if cfg.save_model:
         agent.save_model(cfg.save_path, current_step, is_final=True)
-    data.df.to_csv(cfg.save_file)
+    df_to_save.to_csv(cfg.save_file)
     logger.critical(f"Saved results to {cfg.save_file}")
     logger.save_file_to_wandb(cfg.save_file, base_path=cfg.out_dir)
-    # update final valid and test acc
+    
+    # save confusion Matrix
+    test_df = df_to_save.loc[data.split_ids['test']]
+    pred = test_df.pred[~pd.isna(test_df.pred)]
+    logger.save_confusion_matrix_to_wandb(pred, df_to_save.t1.loc[pred.keys()], data.mse_val_map, data.label_info.label_token)
+    
+    # update final valid and test acc.
+    # save histograms
     final_results = logger.lookup_metric_checkpoint_by_best_eval(cfg.best_eval_metrics, out_metrics=None, max_val=cfg.max_best_eval_metrics)
-    class_distribution = calc_prediction_class_distribution(data.df['confidence'][data.df['confidence'].notnull()])
+    class_distribution = calc_prediction_class_distribution(df_to_save['confidence'][df_to_save['confidence'].notnull()])
     logger.save_histograms_to_wandb(class_distribution)
+    
     logger.wandb_summary_update(final_results, finish_wandb=True)
 
 

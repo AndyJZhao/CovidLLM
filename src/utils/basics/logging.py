@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.traceback import install
 import numpy as np
+from sklearn.metrics import confusion_matrix
 
 install()
 logging.basicConfig(
@@ -105,6 +106,14 @@ class WandbExpLogger:
             else self.results[eval_metric].index(min(self.results[eval_metric]))
         out_metrics = out_metrics or self.results.keys()
         return {m: self.results[m][best_val_ind] for m in out_metrics}
+    
+    def is_the_best_metric(self, eval_metric, cur_data, max_val):
+        if len(self.results[eval_metric]) == 0:
+            return True
+        cur_value = cur_data[eval_metric]
+        is_the_best = (cur_value>=max(self.results[eval_metric])) if max_val\
+            else (cur_value<=min(self.results[eval_metric]))
+        return is_the_best
 
     # ! Experiment metrics functions
     def wandb_summary_update(self, result, finish_wandb=True):
@@ -124,7 +133,38 @@ class WandbExpLogger:
                 table = wandb.Table(data=v, columns=[k])
                 wandb.log({f'class_distribution/{k}': wandb.plot.histogram(table, k,
  	                title=f"{k} Class Distribution")})
-
+                
+    def save_confusion_matrix_to_wandb(self, targets, predictions, mse_val_map, label_token):
+        if self.wandb_on and self.local_rank <= 0:
+            
+            # 'SUBSTANTIAL DECREASING': '0SUBSTANTIAL DECREASING', add num in front of label names
+            label_names_dct = {k:str(v)+k for k,v in mse_val_map.items()}
+            
+            # get ordered label names
+            label_names = []
+            for k, v in mse_val_map.items():
+                if k in label_token.to_list():
+                    label_names.append([label_names_dct[k], v])
+            label_names.sort(key=lambda x:x[1])
+            label_names = list(np.array(label_names)[:, 0])
+            
+            # confusion matrix -- type 1
+            # 'SUBSTANTIAL DECREASING' --> 0
+            predictions_digits = predictions.apply(mse_val_map.get)
+            targets_digits = targets.apply(mse_val_map.get)
+            wandb.log({'Confusion Matrix/Confusion Matrix': wandb.plot.confusion_matrix(
+                y_true = targets_digits.to_list(), preds = predictions_digits.to_list(), class_names = label_names)})
+            
+            # confusion matrix -- type 2
+            # 'SUBSTANTIAL DECREASING' --> '0SUBSTANTIAL DECREASING'
+            new_preds = predictions.apply(label_names_dct.get)
+            new_targets = targets.apply(label_names_dct.get)
+            cm = confusion_matrix(new_targets.to_list(), new_preds.to_list(), labels=label_names)
+            cm_sum = np.sum(cm, axis=0) + 10e-5
+            cm = cm/cm_sum
+            cm = np.round(cm, decimals=2)
+            wandb.log({'Confusion Matrix/Confusion Matrix': wandb.plots.HeatMap(label_names, label_names, cm, show_text=True)})
+        
 
 def wandb_finish(result=None):
     if wandb.run is not None:

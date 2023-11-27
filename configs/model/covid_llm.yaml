@@ -3,7 +3,7 @@ model:
   name: CovidLLM
 
 # @ CovidLLM Settings
-in_weeks: 2
+in_weeks: 3
 target: t1
 # target: t_seq
 tree_node_alias:
@@ -75,7 +75,7 @@ lora:
 # @ EVALUATE
 metrics: [ 'acc' , 'mse', 'wmse']
 eval_embeds_path: null
-eval_sets: [ 'train', 'val' , 'test' ]
+eval_sets: ['val' , 'test' ]
 #eval_sets: [ 'train']
 choice_readout_pos: 0
 min_eval_step: 10
