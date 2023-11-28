@@ -152,7 +152,7 @@ class WandbExpLogger:
             # 'SUBSTANTIAL DECREASING' --> 0
             predictions_digits = predictions.apply(mse_val_map.get)
             targets_digits = targets.apply(mse_val_map.get)
-            wandb.log({'Confusion Matrix/Confusion Matrix': wandb.plot.confusion_matrix(
+            wandb.log({'Confusion Matrix/Confusion Matrix1': wandb.plot.confusion_matrix(
                 y_true = targets_digits.to_list(), preds = predictions_digits.to_list(), class_names = label_names)})
             
             # confusion matrix -- type 2
@@ -163,7 +163,7 @@ class WandbExpLogger:
             cm_sum = np.sum(cm, axis=0) + 10e-5
             cm = cm/cm_sum
             cm = np.round(cm, decimals=2)
-            wandb.log({'Confusion Matrix/Confusion Matrix': wandb.plots.HeatMap(label_names, label_names, cm, show_text=True)})
+            wandb.log({'Confusion Matrix/Confusion Matrix2': wandb.plots.HeatMap(label_names, label_names, cm, show_text=True)})
         
 
 def wandb_finish(result=None):

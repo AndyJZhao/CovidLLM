@@ -124,7 +124,7 @@ def train_covid_llm(cfg):
     # save confusion Matrix
     test_df = df_to_save.loc[data.split_ids['test']]
     pred = test_df.pred[~pd.isna(test_df.pred)]
-    logger.save_confusion_matrix_to_wandb(pred, df_to_save.t1.loc[pred.keys()], data.mse_val_map, data.label_info.label_token)
+    logger.save_confusion_matrix_to_wandb(df_to_save.t1.loc[pred.keys()], pred, data.mse_val_map, data.label_info.label_token)
     
     # update final valid and test acc.
     # save histograms
