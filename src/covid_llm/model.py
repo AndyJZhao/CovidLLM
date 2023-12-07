@@ -333,12 +333,15 @@ class CovidLLM(nn.Module):
         node_ids, prompt_tree_lol, conversation_list = inputs
         # ! Get Graph Language
         # ! Tokenization: batch instance to input and target IDs.
-        seq_emb = self.encode_sequence(node_ids)
         input_ids, target_ids, attention_mask = process_batch_instance(self.tokenizer, conversation_list,
                                                                        self.max_tgt_len, self.conv_template,
                                                                        self.device)
+        if self.cfg.use_cont_fields:
+            seq_emb = self.encode_sequence(node_ids)
+        else:
+            seq_emb = None
+            
         inputs_embeds = self.prompt_wrap(seq_emb, node_ids, input_ids)
-
         outputs = self.llm(
             inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,

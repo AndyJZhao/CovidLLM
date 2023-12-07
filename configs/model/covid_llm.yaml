@@ -8,7 +8,7 @@ target: t1
 # target: t_seq
 tree_node_alias:
   x: feature
-data_aug: false
+splits_type: 'base_splits' # base_splits, sta_aug_splits, dy_aug_splits, sta_dy_aug_splits
 #encoder: RNN
 #encoder: LSTM
 use_seq_encoder: true
@@ -25,18 +25,21 @@ encoder:
 
 cont_fields: all
 _cont_fields_lookup:
-  all: [ 'Change', 'hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w', #关键信息都是前两个
+  all: [ 'Abs_Change', 'hospitalization_per_100k', 'hospitalization_per_100k_sm', 'reported_cases_per_100k', #关键信息都是前两个
          'Dose1_Pop_Pct', 'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct' ]
-  change_only: [ 'Change']
+  change_only: [ 'Abs_Change']
   hos_only: [ 'hospitalization_per_100k']
-  change_hos: ['Change', 'hospitalization_per_100k']
-  infection: [ 'hospitalization_per_100k', 'reported_cases_per_100k', 'previous_infection_12w' ]
+  change_hos: ['Abs_Change', 'hospitalization_per_100k']
+  infection: [ 'hospitalization_per_100k', 'reported_cases_per_100k' ]
   vaccine: [ 'Dose1_Pop_Pct', 'Series_Complete_Pop_Pct', 'Additional_Doses_Vax_Pct' ]
 in_cont_fields: ${_cont_fields_lookup.${cont_fields}}
 
 # @ Demo for In-Context-Learning
 use_static_text: true
 use_dynamic_text: true
+use_trends: true
+use_cont_fields: true
+
 use_demo: true
 demo:
   #  select_method: first # Fixed seed examples for every sample

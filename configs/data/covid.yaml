@@ -2,7 +2,7 @@
 
 
 task_description_type: without_explain
-data_file: processed_with_trends.pkl
+data_file: processed_v5_0.pkl
 
 data:
   name: Covid # To be overwritten by dataset specific values.
@@ -44,33 +44,14 @@ data:
       'dem_percent', 'rep_percent',# 'other_percent'
     ]
   dynamic_cols: [
-    # @ Change of Hospitalization
-    'Change',
-    # @ Infection
-    'hospitalization_per_100k', # Current Risk
-    #    'reported_cases_per_100k', # * previous dynamic cols
-    #    'previous_infection_12w', # * previous dynamic cols
-    # @ Vaccine
-    #    'Dose1_Pop_Pct', # * previous dynamic cols
-    #    'Series_Complete_Pop_Pct', # * previous dynamic cols
-    #    'Additional_Doses_Vax_Pct', # * previous dynamic cols
-    # @ Regulations
-    #    'C1M_School closing',
-    #    'C2M_Workplace closing',
-    #    'C3M_Cancel public events',
-    #    'C4M_Restrictions on gatherings', # * previous dynamic cols
-    #    'C6M_Stay at home requirements', # * previous dynamic cols
-    #    'C7M_Restrictions on internal movement',
-    #    'C8NV_International travel controls',
-    #    'C8V_International travel controls',
-    # * Temporarily abandoned
-    #    'H1_Public information campaigns',
-    #    'H2_Testing policy',
-    #    'H3_Contact tracing',
-    #    'H6M_Facial Coverings',
-    #    'H8M_Protection of elderly people',
-    # @ Other ignored_cols
-    #    'fips', 'Week', 'Week_start', 'Week_end' # No need to let LLM know the exact dates
+    'hospitalization_per_100k',  # Current Risk
+    # 'hospitalization_per_100k_sm',
+    'Abs_Change',
+    # 'Abs_Trend',
+    # 'reported_cases_per_100k',
+    # 'Dose1_Pop_Pct',
+    # 'Series_Complete_Pop_Pct',
+    # 'Additional_Doses_Vax_Pct',
   ]
   label_cols: [
     'Risk_level', 'Risk_level_1w',
