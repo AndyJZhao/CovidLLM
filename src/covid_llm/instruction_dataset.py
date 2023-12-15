@@ -39,11 +39,12 @@ def load_sft_dataset(cfg, full_dataset, split, split_ids, batch_size, world_size
 class InstructionDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, data: CovidData, cfg, mode):
+    def __init__(self, data: CovidData, cfg, mode, use_variant_prompt=False):
         super(InstructionDataset, self).__init__()
         self.data = data
         self.cfg = cfg
         self.mode = mode
+        self.use_variant_prompt = use_variant_prompt
 
     def __len__(self):  # number of instances
         return len(self.data.df)
@@ -56,7 +57,7 @@ class InstructionDataset(Dataset):
             support_tree_list = [  # No node drop out for demo nodes
                 self.data.build_prompt_tree(center_node, supervised=True)
                 for center_node in demo_center_nodes]
-        query_tree = self.data.build_prompt_tree(id, supervised=False)
+        query_tree = self.data.build_prompt_tree(id, supervised=False, use_variant_prompt=self.use_variant_prompt)
         prompt_tree_list = support_tree_list + [query_tree]
 
         # ! Build Prompt

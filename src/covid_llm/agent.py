@@ -43,6 +43,13 @@ class Agent:
     def torch_distributed_barrier(self):
         if self.cfg.get('world_size', 1) > 1:
             th.distributed.barrier()
+            
+    @time_logger()
+    def evaluate_ICL(self, eval_iter):
+        for eval_batch in eval_iter:
+            output = self.predict(eval_batch, self.cfg.eval_choice_only)
+            for col in ['dialog', 'confidence', 'pred']:
+                self.data.df.loc[list(eval_batch[0]), f'{col}_ICL'] = output[col]
 
     @time_logger()
     def evaluate(self, eval_iter_dict, logger):

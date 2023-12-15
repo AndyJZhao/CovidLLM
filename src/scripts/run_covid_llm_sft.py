@@ -66,6 +66,16 @@ def train_covid_llm(cfg):
     # Initialize DataLoaders
     batch_size = cfg.world_size * cfg.ds['train_micro_batch_size_per_gpu']
     full_dataset = InstructionDataset(data, cfg, cfg.mode)
+    
+    if cfg.use_variant_prompt:
+        variant_dataset = InstructionDataset(data, cfg, cfg.mode, use_variant_prompt=True)
+        variant_ids = data.variant_splits
+        _, variant_iter, _ = load_sft_dataset(
+            cfg,
+            full_dataset=variant_dataset, split_ids=variant_ids,
+            batch_size=cfg.inf_batch_size,
+            split='test', world_size=cfg.world_size, rank=cfg.local_rank
+        )
 
     # ! Full data for link prediction
     train_ids = data.split_ids['train'][:cfg.data.max_train_samples]
@@ -98,8 +108,11 @@ def train_covid_llm(cfg):
             if is_eval and current_step % cfg.eval_freq == 0 and current_step >= cfg.min_eval_step:
                 eval_results = agent.evaluate(eval_iter_dict, logger)
                 results.update(eval_results)
-                # record the best one's results
+                
+                # record the best one's results and do ICL
                 if logger.is_the_best_metric(cfg.best_eval_metrics, results, cfg.max_best_eval_metrics):
+                    if cfg.use_variant_prompt:
+                        agent.evaluate_ICL(variant_iter)
                     df_to_save = agent.data.df.copy()
             
             logger.wandb_metric_log({**results, **{'train/epoch': epoch_i}})

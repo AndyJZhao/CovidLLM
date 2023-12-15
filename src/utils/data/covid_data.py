@@ -29,6 +29,7 @@ class CovidData:
         self.df = df = raw_data.sta_dy_aug_data
         self.mse_val_map = raw_data.mse_val_map
         self.split_ids = splits = raw_data[cfg.splits_type][cfg.data.split]
+        self.variant_splits = raw_data.variant_splits
         label_info = raw_data.label_info
         target_type = {'t': 'trend', 'r': 'risk'}[cfg.target[0]]
         self.label_info = label_info = label_info[label_info['label_type'] == target_type]
@@ -77,11 +78,11 @@ class CovidData:
         else:
             return ''
 
-    def build_prompt_tree(self, id, supervised=False):
+    def build_prompt_tree(self, id, supervised=False, use_variant_prompt=False):
         label = self.df.iloc[id][self.cfg.target] if supervised else None
         prompt_tree = PromptTree(self.cfg, data=self, id=id,
                                  label=label, name_alias=self.cfg.tree_node_alias,
-                                 style=self.cfg.prompt.style)
+                                 style=self.cfg.prompt.style, use_variant_prompt=use_variant_prompt)
         return prompt_tree
 
     def select_demo(self, select_method, node_id):
