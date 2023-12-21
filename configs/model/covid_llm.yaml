@@ -39,6 +39,7 @@ use_static_text: true
 use_dynamic_text: true
 use_trends: true
 use_cont_fields: true
+use_variant_prompt: false
 
 use_demo: true
 demo:

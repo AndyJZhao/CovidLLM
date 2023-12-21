@@ -1,0 +1,47 @@
+# sw sweep/V1-SeqEncoder/4.0-Dynamic.sweep
+command:
+  - ${interpreter}
+  - src/scripts/run_covid_llm_sft.py
+  - ${args_no_hyphens}
+method: grid # Bayesian
+metric:
+  goal: minimize
+  name: val_mse
+
+name: V5.0_dynamic_augmentation_random_seed
+parameters:
+  use_deepspeed:
+    value: false
+
+  use_wandb:
+    value: true
+
+  total_steps:
+    value: 1501
+
+  best_eval_metrics:
+    value: val_mse
+
+  seed:
+    values: 
+      - 2022
+      - 2023
+      - 2024
+
+  target:
+    values: 
+      - t3
+      - t1
+
+  splits_type:
+    values:
+      - sta_aug_splits
+      - sta_dy_aug_splits
+      - base_splits
+      - dy_aug_splits
+
+  use_cont_fields:
+    value: true
+  
+  use_trends:
+    value: false

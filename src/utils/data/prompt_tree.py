@@ -4,7 +4,7 @@ from utils.pkg.dict2xml import dict2xml
 
 
 class PromptTree:
-    def __init__(self, cfg, data, id, name_alias, style='xml', label=None):
+    def __init__(self, cfg, data, id, name_alias, style='xml', label=None, use_variant_prompt=False):
         prompt = ''
         info_dict = {}        
         self.style = style
@@ -21,6 +21,10 @@ class PromptTree:
             
         if cfg.use_trends:
             prompt += data[id].Trend_prompt
+            prompt += '\n\n'
+            
+        if use_variant_prompt:
+            prompt == data[id].variant_prompt
             prompt += '\n\n'
         
         if cfg.use_cont_fields:
