@@ -37,6 +37,28 @@ def calc_weighted_mse_from_cls_labels(label, confidence, val_map):
     return res.sum()/len(res)
 
 
+# brier score
+def calc_brier_score(label, confidence, val_map):
+    assert len(confidence) > 0
+    val_map_func = np.vectorize(dict(val_map).get)
+    labels = val_map_func(label)
+
+    res = []
+    for i, conf in enumerate(confidence):
+        cur_label = labels[i]
+        cur_res = 0
+        for k,v in conf.items():
+            # if no matched label, bs is set to 5
+            if np.isnan(v):
+                cur_res = 5
+                break
+            k = dict(val_map).get(k)
+            cur_res += (v-(k==cur_label))**2
+        res.append(cur_res)
+    res = np.array(res)
+    return res.sum()/len(res)
+
+
 def calc_prediction_distribution(pred, class_names):
     unique, counts = np.unique(pred, return_counts=True)
     res = {val: cnt / len(pred)

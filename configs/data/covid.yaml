@@ -2,7 +2,7 @@
 
 
 task_description_type: without_explain
-data_file: processed_v5_1.pkl
+data_file: processed_v5_2.pkl
 
 data:
   name: Covid # To be overwritten by dataset specific values.

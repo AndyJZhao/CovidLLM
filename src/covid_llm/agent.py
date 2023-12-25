@@ -14,7 +14,8 @@ from omegaconf import OmegaConf
 from utils.basics import init_path, lot_to_tol, time_logger
 from utils.pkg.distributed import master_process_only
 from .model import IGNORE_INDEX
-from .metrics import calc_acc, calc_mse_from_cls_labels, calc_prediction_distribution, calc_weighted_mse_from_cls_labels, calc_prediction_class_distribution
+from .metrics import calc_acc, calc_mse_from_cls_labels, calc_prediction_distribution,\
+    calc_weighted_mse_from_cls_labels, calc_prediction_class_distribution, calc_brier_score
 
 logging.getLogger("transformers").setLevel(logging.WARNING)
 logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
@@ -45,11 +46,15 @@ class Agent:
             th.distributed.barrier()
             
     @time_logger()
-    def evaluate_ICL(self, eval_iter):
+    def evaluate_ICL(self, eval_iter, logger):
+        output = {}
         for eval_batch in eval_iter:
             output = self.predict(eval_batch, self.cfg.eval_choice_only)
             for col in ['dialog', 'confidence', 'pred']:
-                self.data.df.loc[list(eval_batch[0]), f'{col}_ICL'] = output[col]
+                self.data.df.loc[list(eval_batch[0]), f'{col}_zero_shot'] = output[col]
+                
+        logger.info(f'Example generated output in zero_shot: {output["dialog"]}\n\n')    
+        logger.info(f'Example generated output in zero_shot: {output["confidence"]}\n\n')    
 
     @time_logger()
     def evaluate(self, eval_iter_dict, logger):
@@ -80,6 +85,8 @@ class Agent:
                 results[f'{split}_mse'] = calc_mse_from_cls_labels(label, pred, self.data.mse_val_map)
             if 'wmse' in self.cfg.metrics:
                 results[f'{split}_wmse'] = calc_weighted_mse_from_cls_labels(label, eval_res['confidence'], self.data.mse_val_map)
+            if 'bs' in self.cfg.metrics:
+                results[f'{split}_bs'] = calc_brier_score(label, eval_res['confidence'], self.data.mse_val_map)
                 
             pd_dict = calc_prediction_distribution(pred, self.model.cls_token_names)
             results.update({f'{split}-PD/{k}': v for k, v in pd_dict.items()})

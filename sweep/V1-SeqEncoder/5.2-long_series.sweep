@@ -1,0 +1,51 @@
+command:
+  - ${interpreter}
+  - src/scripts/run_covid_llm_sft.py
+  - ${args_no_hyphens}
+method: grid # Bayesian
+metric:
+  goal: minimize
+  name: val_mse
+
+name: V5.2_long_series
+parameters:
+  use_deepspeed:
+    values:
+      - false
+
+  use_wandb:
+    values:
+      - true
+
+  total_steps:
+    values:
+      - 1501
+
+  best_eval_metrics:
+    values:
+      - val_mse
+
+  in_weeks:
+    values:
+      - 52
+      - 26
+      - 3
+
+  seed:
+    values: 
+      - 2023
+      - 2022
+
+  target:
+    values: 
+      - t1
+      - t3
+
+  splits_type:
+    value: sta_aug_splits
+    
+  use_cont_fields:
+    value: true
+  
+  use_trends:
+    value: false

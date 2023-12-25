@@ -24,8 +24,9 @@ class PromptTree:
             prompt += '\n\n'
             
         if use_variant_prompt:
-            prompt == data[id].variant_prompt
+            prompt += data[id].variant_prompt
             prompt += '\n\n'
+            
         
         if cfg.use_cont_fields:
             prompt += 'The sequential information of hospitalization is:\n'

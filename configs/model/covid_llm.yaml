@@ -22,7 +22,7 @@ encoder:
   dropout: ${dropout}
   batch_first: true
   bidirectional: ${bi_encoder}
-
+  
 cont_fields: all
 _cont_fields_lookup:
   all: [ 'Abs_Change', 'hospitalization_per_100k', 'hospitalization_per_100k_sm', 'reported_cases_per_100k', #关键信息都是前两个
@@ -39,7 +39,9 @@ use_static_text: true
 use_dynamic_text: true
 use_trends: true
 use_cont_fields: true
+text_cont_fields: false
 use_variant_prompt: false
+test_variant_prompt: false
 
 use_demo: true
 demo:
@@ -77,7 +79,7 @@ lora:
 #  modules_to_save: [ embed_tokens, lm_head ]
 
 # @ EVALUATE
-metrics: [ 'acc' , 'mse', 'wmse']
+metrics: [ 'acc' , 'mse', 'wmse', 'bs']
 eval_embeds_path: null
 eval_sets: ['val' , 'test' ]
 #eval_sets: [ 'train']
