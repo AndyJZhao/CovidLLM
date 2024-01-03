@@ -43,8 +43,9 @@ def train_covid_llm(cfg):
     else:
         cfg.use_bf16 = th.cuda.is_bf16_supported() and cfg.use_bf16
 
-    initialize_distributed(cfg)
+    initialize_distributed(cfg, logger)
     initialize_deepspeed(cfg)
+    
     if cfg.get('use_flash_attn', False):  # and ( == 'Ampere':  # CPU Debug only
         logger.critical('Using FlashAttn2 for training')
         from covid_llm.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
@@ -53,15 +54,32 @@ def train_covid_llm(cfg):
         logger.critical('FlashAttn2 disabled for training')
     logger.critical(f'eq_batch_size={cfg.eq_batch_size}, bsz_per_gpu={cfg.bsz_per_gpu}, '
                     f'grad_acc_steps={cfg.grad_acc_steps}')
+    
     model = CovidLLM(cfg, data, logger)
+    
+    if th.cuda.is_available():
+        th.cuda.set_device(cfg.local_rank)
+        device = th.device("cuda", cfg.local_rank)
+    else:
+        device =  th.device('cpu')
+    
     if cfg.use_deepspeed:
         logger.critical('Using DeepSpeed agent for training')
         agent = DeepSpeedAgent(model, cfg, data, logger)
     else:
-        model = model.to(model.device)
+        model = model.to(device)
         logger.critical(f'Using normal agent for training.')
         agent = Agent(model, cfg, data, logger)
-
+        
+    # if cfg.is_distributed and cfg.world_size>1:
+    #     logger.critical(f'Using DistributedDataParallel.')
+    #     th.distributed.barrier()
+    #     model = th.nn.parallel.DistributedDataParallel(model,
+    #                                                   device_ids=[cfg.local_rank],
+    #                                                   output_device=cfg.local_rank)
+    # else:
+    #     model.init_rank(cfg)
+        
     print_important_cfg(cfg, logger.debug)
     # Initialize DataLoaders
     batch_size = cfg.world_size * cfg.ds['train_micro_batch_size_per_gpu']
@@ -112,7 +130,7 @@ def train_covid_llm(cfg):
                 # record the best one's results and do ICL
                 if logger.is_the_best_metric(cfg.best_eval_metrics, results, cfg.max_best_eval_metrics):
                     if cfg.use_variant_prompt:
-                        agent.evaluate_ICL(variant_iter)
+                        agent.evaluate_ICL(variant_iter, logger)
                     df_to_save = agent.data.df.copy()
             
             logger.wandb_metric_log({**results, **{'train/epoch': epoch_i}})

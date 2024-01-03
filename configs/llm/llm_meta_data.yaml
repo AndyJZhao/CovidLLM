@@ -18,8 +18,8 @@ _llm_md_lookup:
     inf_bsz: 12 # FP16, 40GB
   llama2-13b:
     hf_name: meta-llama/Llama-2-13b-hf
-    max_bsz_per_gpu: 2
-    inf_bsz: 2
+    max_bsz_per_gpu: 1
+    inf_bsz: 1
     hidden_dim: 5120
   llama2-13b-chat:
     hf_name: meta-llama/Llama-2-13b-chat-hf

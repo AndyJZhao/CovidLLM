@@ -143,8 +143,7 @@ class CovidLLM(nn.Module):
         self.cfg = cfg
         self.data = data
         self.df = data.df
-        self.logger = logger
-        self.device = th.cuda.current_device() if th.cuda.is_available() else th.device('cpu')
+        # self.logger = logger
 
         if self.cfg.ds.bf16.enable:
             self.float_type = th.bfloat16
@@ -166,10 +165,11 @@ class CovidLLM(nn.Module):
             padding_side="right",
             trust_remote_code=True)
         # ! UNK and EOS token leads to error
-        # self.tokenizer.pad_token = self.tokenizer.unk_token  # Leads to error
         self.tokenizer.pad_token = '<pad>'  # Deal with empty unk token bug
-        with time_logger(f'initialization of LLM decoder from {cfg.llm.local_dir}'):
-            self.llm = AutoModelForCausalLM.from_pretrained(cfg.llm.local_dir, trust_remote_code=True)
+        
+        # with time_logger(f'initialization of LLM decoder from {cfg.llm.local_dir}'):   # lead to error in DDP
+        
+        self.llm = AutoModelForCausalLM.from_pretrained(cfg.llm.local_dir, trust_remote_code=True)
         self.llm.config.use_cache = False
         self.cls_token_names = class_tokens = [r.label_token for i, r in data.label_info.iterrows()]
         field_tokens = [f'<{f.upper()}-EMB>' for f in data.in_cont_fields]
@@ -248,6 +248,14 @@ class CovidLLM(nn.Module):
                 p.requires_grad = True
             logging.info('The LLM LLAMA is frozen except input and output embeddings.')
         self.max_tgt_len = max_tgt_len
+        
+    def init_rank(self, cfg):
+        self.rank = cfg.local_rank
+        if th.cuda.is_available():
+            th.cuda.set_device(self.rank)
+            self.device = th.device("cuda", self.rank)
+        else:
+            self.device =  th.device('cpu')
 
     def get_input_embeddings(self, input_ids):
         batch_size = input_ids.shape[0]
@@ -342,6 +350,7 @@ class CovidLLM(nn.Module):
             seq_emb = None
             
         inputs_embeds = self.prompt_wrap(seq_emb, node_ids, input_ids)
+        
         outputs = self.llm(
             inputs_embeds=inputs_embeds,
             attention_mask=attention_mask,

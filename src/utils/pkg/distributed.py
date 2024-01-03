@@ -18,12 +18,13 @@ def initialize_deepspeed(cfg):
     cfg.use_bf16 = cfg.use_bf16 if cfg.use_deepspeed else False
     if cfg.use_deepspeed:
         import deepspeed
-        deepspeed.init_distributed(dist_backend='nccl')
+        deepspeed.init_distributed(dist_backend='nccl', distributed_port=cfg.distributed_port)
 
 
-def initialize_distributed(cfg):
+def initialize_distributed(cfg, logger):
     cfg.is_distributed = False
     cfg.world_size = int(os.getenv('WORLD_SIZE', '1'))
+    logger.info(f"world_size={cfg.world_size}")
     if th.cuda.is_available():
         cfg.master_ip = os.getenv('MASTER_ADDR', 'localhost')
         cfg.master_port = os.getenv('MASTER_PORT', '6000')
@@ -33,6 +34,10 @@ def initialize_distributed(cfg):
         cfg.is_distributed = th.cuda.device_count() > 1
     else:
         cfg.local_rank = 0
+
+    if cfg.world_size > 1 and not dist.is_initialized():
+        logger.info(f"init_process_group")
+        init_process_group("nccl", init_method="env://")  
 
 
 def process_on_master_and_sync_by_pickle(cache_arg=None, cache_kwarg=None, log_func=logger.info):

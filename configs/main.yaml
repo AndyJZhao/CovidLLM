@@ -17,6 +17,7 @@ debug: false
 
 # ! Experiments
 seed: 2023
+distributed_port: 29499
 # ! Path
 # @ Note that path end with /, file end without /
 path:

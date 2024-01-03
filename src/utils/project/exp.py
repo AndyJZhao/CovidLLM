@@ -1,7 +1,6 @@
 import os
 from datetime import datetime
 from uuid import uuid4
-
 import numpy as np
 import torch
 import wandb
@@ -59,11 +58,7 @@ def init_experiment(cfg):
     cfg = init_env_variables(cfg)  # Update environment args defined in cfg
     wandb_init(cfg)
     set_seed(cfg.seed)
-    world_size = get_world_size()
-    if world_size > 1 and not dist.is_initialized():
-        # init_process_group("nccl", init_method="proj://")
-        init_process_group("nccl", init_method="env://")
-
+    
     # In CovidLLM working directory is initialized by CovidLLM and shared by LM and GNN submodules.
     cfg.uid = generate_unique_id(cfg)
     init_path([cfg.out_dir, cfg.working_dir])
