@@ -8,10 +8,15 @@ metric:
   name: val_mse
 
 name: V5.2_long_series
+
+
+
 parameters:
+  data_file: 
+    value: processed_v5_2.pkl
+
   use_deepspeed:
-    values:
-      - false
+    value: false
 
   use_wandb:
     values:
@@ -27,8 +32,6 @@ parameters:
 
   in_weeks:
     values:
-      - 52
-      - 26
       - 3
 
   seed:
