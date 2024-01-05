@@ -62,6 +62,8 @@ def train_covid_llm(cfg):
         device = th.device("cuda", cfg.local_rank)
     else:
         device =  th.device('cpu')
+        
+    model.init_rank(cfg.local_rank, device)
     
     if cfg.use_deepspeed:
         logger.critical('Using DeepSpeed agent for training')

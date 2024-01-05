@@ -249,13 +249,9 @@ class CovidLLM(nn.Module):
             logging.info('The LLM LLAMA is frozen except input and output embeddings.')
         self.max_tgt_len = max_tgt_len
         
-    def init_rank(self, cfg):
-        self.rank = cfg.local_rank
-        if th.cuda.is_available():
-            th.cuda.set_device(self.rank)
-            self.device = th.device("cuda", self.rank)
-        else:
-            self.device =  th.device('cpu')
+    def init_rank(self, rank, device):
+        self.rank = rank
+        self.device = device
 
     def get_input_embeddings(self, input_ids):
         batch_size = input_ids.shape[0]
